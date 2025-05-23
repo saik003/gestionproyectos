@@ -757,10 +757,6 @@ tr:hover {
                     <label>Email</label>
                     <input type="email" id="emailUsuario" placeholder="correo@ejemplo.com">
                 </div>
-                <div class="form-group">
-                    <label>Cargo</label>
-                    <input type="text" id="cargoUsuario" placeholder="Puesto de trabajo">
-                </div>
                 <div class="form-actions">
                     <button onclick="agregarUsuario()" class="btn btn-primary">Guardar Usuario</button>
                 </div>
@@ -2574,7 +2570,7 @@ async function agregarUsuario() {
     try {
         const nombre = document.getElementById('nombreUsuario').value;
         const email = document.getElementById('emailUsuario').value;
-        const rol = document.getElementById('rolUsuario').value;
+        const rol = document.getElementById('areaUsuario').value;
         
         if (!nombre || !email) {
             alert('Por favor, ingresa al menos el nombre y email del usuario.');
@@ -2605,12 +2601,13 @@ async function agregarUsuario() {
             contadorIdUsuario = Math.max(contadorIdUsuario, resultado.id + 1);
             
             // Recargar usuarios desde la API
+            debugger;
             usuarios = await ApiClient.getUsers();
             
             // Limpiar formulario
             document.getElementById('nombreUsuario').value = '';
             document.getElementById('emailUsuario').value = '';
-            document.getElementById('rolUsuario').value = 'usuario';
+            document.getElementById('areaUsuario').value = 'desarrollo';
             
             // Actualizar tabla y selectores
             cargarTablaUsuarios();
@@ -2704,32 +2701,59 @@ function editarUsuario(id) {
 }
 
 // Eliminar usuario
-function eliminarUsuario(id) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) {
-        return;
+async function eliminarUsuario(id) {
+    try {
+        if (!confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) {
+            return;
+        }
+        
+        // Buscar el usuario en el array local
+        const usuarioIndex = usuarios.findIndex(u => u.id === id);
+        if (usuarioIndex === -1) {
+            alert('Usuario no encontrado.');
+            return;
+        }
+        
+        const usuario = usuarios[usuarioIndex];
+        
+        // Verificar si hay tareas asignadas a este usuario
+        // Primero obtenemos todas las tareas actualizadas
+        const todasLasTareas = await ApiClient.getTasks();
+        const nombreUsuario = usuario.name || usuario.nombre; // Compatibilidad con ambos formatos
+        
+        const tareasAsignadas = todasLasTareas.filter(t => {
+            const responsable = t.responsable || t.responsible;
+            return responsable === nombreUsuario;
+        });
+        
+        if (tareasAsignadas.length > 0) {
+            alert(`No se puede eliminar este usuario porque tiene ${tareasAsignadas.length} tareas asignadas.`);
+            return;
+        }
+        
+        console.log(`Eliminando usuario con ID: ${id}`);
+        
+        // Llamar a la API para eliminar el usuario
+        const resultado = await ApiClient.deleteUser(id);
+        
+        if (resultado && resultado.message === 'success') {
+            console.log('Usuario eliminado correctamente en la API');
+            
+            // Actualizar el array local solo después de éxito en la API
+            usuarios = usuarios.filter(u => u.id !== id);
+            
+            // Actualizar vista
+            cargarTablaUsuarios();
+            cargarSelectoresUsuarios();
+            
+            alert('✅ Usuario eliminado correctamente');
+        } else {
+            throw new Error('No se pudo eliminar el usuario en la API. ' + (resultado?.message || ''));
+        }
+    } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+        alert('❌ Error al eliminar el usuario: ' + error.message);
     }
-    
-    const usuarioIndex = usuarios.findIndex(u => u.id === id);
-    if (usuarioIndex === -1) return;
-    
-    const usuario = usuarios[usuarioIndex];
-    
-    // Verificar si hay tareas asignadas a este usuario
-    const tareasAsignadas = tareas.filter(t => t.responsable === usuario.nombre);
-    if (tareasAsignadas.length > 0) {
-        alert(`No se puede eliminar este usuario porque tiene ${tareasAsignadas.length} tareas asignadas.`);
-        return;
-    }
-    
-    // Eliminar el usuario
-    usuarios.splice(usuarioIndex, 1);
-    guardarUsuarios();
-    
-    // Actualizar vista
-    cargarTablaUsuarios();
-    cargarSelectoresUsuarios();
-    
-    alert('✅ Usuario eliminado correctamente');
 }
 
 
