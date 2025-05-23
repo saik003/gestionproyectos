@@ -321,13 +321,12 @@ tr:hover {
 <body>
 <div class="container">
     <div class="header">
-        <h1>🚀 Sistema de Seguimiento IT</h1>
+        <h1>🚀 Sistema de Seguimiento IT GESTAGUA</h1>
         <p>Control completo de tareas, horas y progreso de tu equipo</p>
     </div>
 
     <div class="tabs">
         <button class="tab active" onclick="showTab('registro')">📝 Registro de Tareas</button>
-        <button class="tab" onclick="showTab('seguimiento')">📊 Seguimiento</button>
         <button class="tab" onclick="showTab('daily')">📅 Vista Daily</button>
         <button class="tab" onclick="showTab('personas')">👥 Vista por Persona</button>
         <button class="tab" onclick="showTab('dashboard')">📈 Dashboard</button>
@@ -434,7 +433,7 @@ tr:hover {
                 </div>
             </div>
             <div class="form-actions">
-                <button onclick="agregarTarea()" class="btn btn-primary">💾 Guardar Tarea</button>
+                <button onclick="guardarTareaDirecto()" class="btn btn-primary">💾 Guardar Tarea</button>
                 <button onclick="cancelarFormularioTarea()" class="btn">❌ Cancelar</button>
             </div>
         </div>
@@ -494,33 +493,6 @@ tr:hover {
             </div>
         </div>
     </div>
-<!-- TAB: Actualizar Horas removed - functionality integrated into Registro de Tareas -->
-    <!-- TAB: Seguimiento -->
-    <div id="seguimiento" class="tab-content">
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Área</th>
-                        <th>Responsable</th>
-                        <th>Proyecto</th>
-                        <th>Tarea</th>
-                        <th>Estado</th>
-                        <th>Prioridad</th>
-                        <th>Progreso</th>
-                        <th>Horas Est.</th>
-                        <th>Horas Real.</th>
-                        <th>Fecha Fin</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaTareas">
-                    <!-- Las tareas se llenarán dinámicamente -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <!-- TAB: Vista Daily -->
     <div id="daily" class="tab-content">
         <div class="form-section">
@@ -800,10 +772,11 @@ tr:hover {
             <table id="tablaUsuarios" class="data-table">
                 <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Nombre</th>
                         <th>Área</th>
                         <th>Email</th>
-                        <th>Cargo</th>
+                        <th>Activo</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -815,20 +788,163 @@ tr:hover {
     </div>
 </div>
 
-<script>
-function limpiarFormulario() {
-    document.getElementById('responsable').value = '';
-    document.getElementById('proyecto').value = '';
-    document.getElementById('descripcion').value = '';
-    document.getElementById('fechaInicio').value = '';
-    document.getElementById('fechaFin').value = '';
-    document.getElementById('horasEstimadas').value = '';
+    <!-- Incluir los scripts externos -->
+    <script src="js/api.js"></script>
+    <script>
+
+    function limpiarFormulario() {
+        document.getElementById('responsable').value = '';
+        document.getElementById('proyecto').value = '';
+        document.getElementById('descripcion').value = '';
+        document.getElementById('fechaInicio').value = '';
+        document.getElementById('fechaFin').value = '';
+        document.getElementById('horasEstimadas').value = '';
+    }
+// Variable global para controlar llamadas en progreso
+let operacionGuardadoEnProgreso = false;
+
+// Función para guardar datos a través de la API
+async function guardarDatos() {
+    console.log('Guardando datos a través de la API...');
+    
+    // Evitar bucles infinitos y llamadas múltiples
+    if (operacionGuardadoEnProgreso) {
+        console.log('Ya hay una operación de guardado en progreso, ignorando esta llamada');
+        return;
+    }
+    
+    operacionGuardadoEnProgreso = true;
+    
+    try {
+        // Si es un click directo en el botón de guardar tarea, usar el manejador directo
+        // que no vuelve a llamar a guardarDatos
+        const formularioTarea = document.getElementById('formularioTarea');
+        if (formularioTarea && formularioTarea.style.display !== 'none') {
+            console.log('Formulario de tarea visible - ejecutando guardarTareaDirecto()');
+            await guardarTareaDirecto();
+            return;
+        }
+        
+        // Si estamos en el contexto de imputar horas
+        const formularioImputarHoras = document.getElementById('formularioImputarHoras');
+        if (formularioImputarHoras && formularioImputarHoras.style.display !== 'none') {
+            console.log('Formulario de imputar horas visible - ejecutando imputarHorasTarea()');
+            await imputarHorasTarea();
+            return;
+        }
+        
+        // Si llegamos aquí, probablemente se llamó desde otra parte del código
+        // que aún no ha sido adaptada para usar la API directamente
+        console.log('Llamada genérica a guardarDatos() - actualizando vista');
+        
+        // Recargar datos desde la API para asegurar sincronización
+        tareas = await ApiClient.getTasks();
+        registrosDiarios = await ApiClient.getDailyRecords();
+        
+        // Actualizar la interfaz
+        mostrarTareas();
+        actualizarDashboard();
+    } catch (error) {
+        console.error('Error en guardarDatos():', error);
+        alert('Error al guardar los datos: ' + error.message);
+    } finally {
+        operacionGuardadoEnProgreso = false;
+    }
 }
 
-function guardarDatos() {
-    localStorage.setItem('tareasIT', JSON.stringify(tareas));
-    localStorage.setItem('contadorIdTareas', contadorId.toString());
-    localStorage.setItem('registrosDiarios', JSON.stringify(registrosDiarios));
+// Función directa para guardar tareas sin pasar por guardarDatos
+async function guardarTareaDirecto() {
+    console.log('guardarTareaDirecto() - Guardando tarea directamente');
+    
+    // Evitar llamadas recursivas
+    if (guardandoTarea) {
+        console.log('Ya se está procesando una solicitud de guardar tarea');
+        return;
+    }
+    
+    guardandoTarea = true;
+    
+    try {
+        // Obtener valores del formulario
+        const area = document.getElementById('area')?.value || '';
+        const responsable = document.getElementById('responsable')?.value || '';
+        const proyecto = document.getElementById('proyecto')?.value || '';
+        const descripcion = document.getElementById('descripcion')?.value || '';
+        const estado = document.getElementById('estado')?.value || 'activa';
+        const prioridad = document.getElementById('prioridad')?.value || 'media';
+        const fechaInicio = document.getElementById('fechaInicio')?.value || '';
+        const fechaFin = document.getElementById('fechaFin')?.value || '';
+        const horasEstimadas = parseFloat(document.getElementById('horasEstimadas')?.value) || 0;
+        
+        console.log('Valores del formulario:', {
+            area, responsable, proyecto, descripcion, estado, prioridad,
+            fechaInicio, fechaFin, horasEstimadas
+        });
+        
+        // Validaciones básicas
+        if (!responsable || !proyecto || !descripcion) {
+            alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
+            return;
+        }
+    
+        // Preparar los datos para la API
+        const taskData = {
+            title: descripcion,
+            description: descripcion,
+            start_date: fechaInicio,
+            end_date: fechaFin || null,
+            estimated_hours: horasEstimadas,
+            status: estado === 'activa' ? 'active' : 'inactive',
+            project_id: parseInt(proyecto),
+            assigned_to: parseInt(responsable),
+            created_by: 1 // Asumimos usuario actual por defecto
+        };
+        
+        console.log('Enviando datos a la API:', taskData);
+        
+        let resultado;
+        
+        if (tareaEnEdicion) {
+            // Editar tarea existente usando la API
+            console.log('Actualizando tarea existente ID:', tareaEnEdicion);
+            resultado = await ApiClient.updateTask(tareaEnEdicion, taskData);
+            
+            if (resultado) {
+                alert('✅ Tarea actualizada correctamente');
+            } else {
+                throw new Error('No se pudo actualizar la tarea. El servidor no respondió correctamente.');
+            }
+        } else {
+            // Crear nueva tarea usando la API
+            console.log('Creando nueva tarea');
+            resultado = await ApiClient.createTask(taskData);
+            
+            if (resultado && resultado.id) {
+                contadorId = Math.max(contadorId, resultado.id + 1);
+                alert('✅ Tarea creada correctamente');
+            } else {
+                throw new Error('No se pudo crear la tarea. El servidor no devolvió un ID de tarea.');
+            }
+        }
+        
+        console.log('Resultado de la operación:', resultado);
+        
+        // Recargar tareas desde la API
+        console.log('Recargando lista de tareas...');
+        tareas = await ApiClient.getTasks();
+        console.log('Tareas recargadas:', tareas.length, 'tareas');
+        
+        // Limpiar y actualizar
+        tareaEnEdicion = null;
+        cancelarFormularioTarea();
+        mostrarTareas();
+        actualizarDashboard();
+    } catch (error) {
+        console.error('Error al guardar la tarea:', error);
+        alert('❌ Error al guardar la tarea: ' + error.message);
+    } finally {
+        guardandoTarea = false;
+    }
 }
 
 // Inicializar la aplicación
@@ -851,14 +967,21 @@ let tareas = [];
 let contadorId = 1;
 let registrosDiarios = []; // Nuevo array para registros diarios
 
-// Inicializar datos
-function inicializarDatos() {
+// Inicializar datos cargándolos desde la API
+async function inicializarDatos() {
     try {
-        tareas = JSON.parse(localStorage.getItem('tareasIT') || '[]');
-        contadorId = parseInt(localStorage.getItem('contadorIdTareas') || '1');
-        registrosDiarios = JSON.parse(localStorage.getItem('registrosDiarios') || '[]');
+        // Cargar tareas desde la API
+        tareas = await ApiClient.getTasks();
+        
+        // Determinar el siguiente ID de tarea basado en el máximo ID existente
+        contadorId = tareas.length > 0 ? Math.max(...tareas.map(t => t.id)) + 1 : 1;
+        
+        // Cargar registros diarios desde la API
+        registrosDiarios = await ApiClient.getDailyRecords();
+        
+        console.log('Datos cargados correctamente desde la API');
     } catch (error) {
-        console.log('Error cargando datos, usando valores por defecto');
+        console.error('Error cargando datos desde la API, usando valores por defecto', error);
         tareas = [];
         contadorId = 1;
         registrosDiarios = [];
@@ -896,61 +1019,99 @@ function showTab(tabName) {
 }
 
 // Función para agregar tarea
-function agregarTarea() {
-    // Si estamos editando una tarea existente
-    if (tareaEnEdicion) {
-        const tareaIndex = tareas.findIndex(t => t.id === tareaEnEdicion);
-        if (tareaIndex !== -1) {
-            const tarea = tareas[tareaIndex];
-            
-            // Actualizar datos de la tarea
-            tarea.area = document.getElementById('area').value;
-            tarea.responsable = document.getElementById('responsable').value;
-            tarea.proyecto = document.getElementById('proyecto').value;
-            tarea.descripcion = document.getElementById('descripcion').value;
-            tarea.estado = document.getElementById('estado').value;
-            tarea.prioridad = document.getElementById('prioridad').value;
-            tarea.fechaInicio = document.getElementById('fechaInicio').value;
-            tarea.fechaFin = document.getElementById('fechaFin').value;
-            tarea.horasEstimadas = parseFloat(document.getElementById('horasEstimadas').value) || 0;
-            
-            guardarDatos();
-            tareaEnEdicion = null;
-            cancelarFormularioTarea();
-            mostrarTareas();
-            alert('✅ Tarea actualizada correctamente');
-            return;
-        }
-    }
-    
-    // Si es una nueva tarea
-    const nuevaTarea = {
-        id: contadorId++,
-        area: document.getElementById('area').value,
-        responsable: document.getElementById('responsable').value,
-        proyecto: document.getElementById('proyecto').value,
-        descripcion: document.getElementById('descripcion').value,
-        estado: document.getElementById('estado').value,
-        prioridad: document.getElementById('prioridad').value,
-        fechaInicio: document.getElementById('fechaInicio').value,
-        fechaFin: document.getElementById('fechaFin').value,
-        horasEstimadas: parseFloat(document.getElementById('horasEstimadas').value) || 0,
-        horasTrabajadas: 0,
-        progreso: 0,
-        fechaCreacion: new Date().toISOString().split('T')[0]
-    };
-    
-    // Validaciones básicas
-    if (!nuevaTarea.responsable || !nuevaTarea.proyecto || !nuevaTarea.descripcion) {
-        alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
+// Variable para evitar bucle infinito
+let guardandoTarea = false;
+
+async function agregarTarea() {
+    // Evitar llamadas recursivas
+    if (guardandoTarea) {
+        console.log('Ya se está procesando una solicitud de guardar tarea');
         return;
     }
     
-    tareas.push(nuevaTarea);
-    guardarDatos();
-    cancelarFormularioTarea();
-    mostrarTareas();
-    alert('✅ Tarea creada correctamente');
+    guardandoTarea = true;
+    
+    try {
+        // Obtener valores del formulario
+        const area = document.getElementById('area')?.value || '';
+        const responsable = document.getElementById('responsable')?.value || '';
+        const proyecto = document.getElementById('proyecto')?.value || '';
+        const descripcion = document.getElementById('descripcion')?.value || '';
+        const estado = document.getElementById('estado')?.value || 'activa'; // Asegurarnos que sea 'activa' y no 'active'
+        const prioridad = document.getElementById('prioridad')?.value || 'media';
+        const fechaInicio = document.getElementById('fechaInicio')?.value || '';
+        const fechaFin = document.getElementById('fechaFin')?.value || '';
+        const horasEstimadas = parseFloat(document.getElementById('horasEstimadas')?.value) || 0;
+        
+        console.log('Valores del formulario:', {
+            area, responsable, proyecto, descripcion, estado, prioridad,
+            fechaInicio, fechaFin, horasEstimadas
+        });
+        
+        // Validaciones básicas
+        if (!responsable || !proyecto || !descripcion) {
+            alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
+            return;
+        }
+    
+        // Preparar los datos para la API
+        const taskData = {
+            title: descripcion,
+            description: descripcion,
+            start_date: fechaInicio,
+            end_date: fechaFin || null,
+            estimated_hours: horasEstimadas,
+            status: estado === 'activa' ? 'active' : 'inactive',
+            project_id: parseInt(proyecto),
+            assigned_to: parseInt(responsable),
+            created_by: 1 // Asumimos usuario actual por defecto
+        };
+        
+        console.log('Enviando datos a la API:', taskData);
+        
+        let resultado;
+        
+        if (tareaEnEdicion) {
+            // Editar tarea existente usando la API
+            console.log('Actualizando tarea existente ID:', tareaEnEdicion);
+            resultado = await ApiClient.updateTask(tareaEnEdicion, taskData);
+            
+            if (resultado) {
+                alert('✅ Tarea actualizada correctamente');
+            } else {
+                throw new Error('No se pudo actualizar la tarea. El servidor no respondió correctamente.');
+            }
+        } else {
+            // Crear nueva tarea usando la API
+            console.log('Creando nueva tarea');
+            resultado = await ApiClient.createTask(taskData);
+            
+            if (resultado && resultado.id) {
+                contadorId = Math.max(contadorId, resultado.id + 1);
+                alert('✅ Tarea creada correctamente');
+            } else {
+                throw new Error('No se pudo crear la tarea. El servidor no devolvió un ID de tarea.');
+            }
+        }
+        
+        console.log('Resultado de la operación:', resultado);
+        
+        // Recargar tareas desde la API
+        console.log('Recargando lista de tareas...');
+        tareas = await ApiClient.getTasks();
+        console.log('Tareas recargadas:', tareas);
+        
+        // Limpiar y actualizar
+        tareaEnEdicion = null;
+        cancelarFormularioTarea();
+        mostrarTareas();
+        actualizarDashboard();
+    } catch (error) {
+        console.error('Error al guardar la tarea:', error);
+        alert('❌ Error al guardar la tarea: ' + error.message);
+    } finally {
+        guardandoTarea = false;
+    }
 }
 
 // Cancelar formulario de tarea
@@ -1148,7 +1309,7 @@ function agregarTarea() {
 }
 
 // Imputar horas a una tarea
-function imputarHorasTarea() {
+async function imputarHorasTarea() {
     if (!tareaSeleccionadaDirecta) return;
     
     const usuarioRegistra = document.getElementById('usuarioImputacion').value;
@@ -1177,62 +1338,59 @@ function imputarHorasTarea() {
         return;
     }
     
-    // Actualizar la tarea
-    const tareaIndex = tareas.findIndex(t => t.id === tareaSeleccionadaDirecta);
-    if (tareaIndex === -1) return;
-    
-    const tarea = tareas[tareaIndex];
-    
-    // Actualizar horas trabajadas
-    tarea.horasTrabajadas += horasImputadas;
-    
-    // Calcular progreso basado en horas estimadas vs horas trabajadas
-    // Si no hay horas estimadas, mantener el progreso en 0
-    if (tarea.horasEstimadas > 0) {
-        tarea.progreso = Math.min(100, Math.round((tarea.horasTrabajadas / tarea.horasEstimadas) * 100));
-    } else {
-        tarea.progreso = 0;
-    }
-    
-    // Determinar estado basado en el progreso calculado
-    if (tarea.progreso === 100 && tarea.estado !== 'completado') {
-        tarea.estado = 'completado';
-    } else if (tarea.progreso > 0 && tarea.progreso < 100 && tarea.estado === 'pendiente') {
-        tarea.estado = 'en_progreso';
-    }
-    
-    // Si se completó la tarea y no tiene fecha fin, establecer hoy como fecha fin
-    if (tarea.estado === 'completado' && !tarea.fechaFin) {
-        tarea.fechaFin = fechaImputacion;
-    }
-    
-    // Crear registro diario
-    const registroDiario = {
-        id: Date.now(),
-        tareaId: tarea.id,
-        fecha: fechaImputacion,
-        responsable: tarea.responsable,  // Mantener el responsable original de la tarea
-        usuarioRegistra: usuarioRegistra, // Quien registra las horas
-        proyecto: tarea.proyecto,
-        descripcionTarea: tarea.descripcion,
-        horasTrabajadas: horasImputadas,
-        comentarios: comentarios,
-        progreso: tarea.progreso, // Usar el progreso calculado
-        area: tarea.area
-    };
-    
-    registrosDiarios.push(registroDiario);
-    
-    // Guardar datos
-    guardarDatos();
-    
-    // Mostrar mensaje
-    alert(`✅ Horas registradas correctamente.\nUsuario: ${usuarioRegistra}\nFecha: ${fechaImputacion}\nHoras: ${horasImputadas}h\nTotal acumulado: ${tarea.horasTrabajadas}h\nProgreso calculado: ${tarea.progreso}%`);
-    
-    // Mostrar alerta si se excedió en horas
-    if (tarea.horasTrabajadas > tarea.horasEstimadas) {
-        const exceso = tarea.horasTrabajadas - tarea.horasEstimadas;
-        alert(`⚠️ ALERTA: Esta tarea ha excedido las horas estimadas.\nHoras estimadas: ${tarea.horasEstimadas}h\nHoras trabajadas: ${tarea.horasTrabajadas}h\nExceso: ${exceso.toFixed(1)}h`);
+    try {
+        // Buscar la tarea actual
+        const tarea = tareas.find(t => t.id === tareaSeleccionadaDirecta);
+        if (!tarea) return;
+        
+        // Crear el objeto de registro diario para la API
+        const dailyRecordData = {
+            task_id: tareaSeleccionadaDirecta,
+            user_id: parseInt(usuarioRegistra),
+            date: fechaImputacion,
+            hours: horasImputadas,
+            comments: comentarios
+        };
+        
+        // Llamar a la API para crear el registro diario
+        await ApiClient.createDailyRecord(dailyRecordData);
+        
+        // Recargar datos desde la API
+        tareas = await ApiClient.getTasks();
+        registrosDiarios = await ApiClient.getDailyRecords();
+        
+        // Buscar la tarea actualizada para mostrar la información
+        const tareaActualizada = tareas.find(t => t.id === tareaSeleccionadaDirecta);
+        
+        // Mostrar mensaje de éxito
+        if (tareaActualizada) {
+            // Calcular el total acumulado y progreso
+            const totalHoras = tareaActualizada.completed_hours || 0;
+            let progreso = 0;
+            
+            if (tareaActualizada.estimated_hours > 0) {
+                progreso = Math.min(100, Math.round((totalHoras / tareaActualizada.estimated_hours) * 100));
+            }
+            
+            // Mostrar mensaje con la información actualizada
+            alert(`✅ Horas registradas correctamente.\nUsuario: ${usuarioRegistra}\nFecha: ${fechaImputacion}\nHoras: ${horasImputadas}h\nTotal acumulado: ${totalHoras}h\nProgreso calculado: ${progreso}%`);
+            
+            // Mostrar alerta si se excedió en horas
+            if (totalHoras > tareaActualizada.estimated_hours) {
+                const exceso = totalHoras - tareaActualizada.estimated_hours;
+                alert(`⚠️ ALERTA: Esta tarea ha excedido las horas estimadas.\nHoras estimadas: ${tareaActualizada.estimated_hours}h\nHoras trabajadas: ${totalHoras}h\nExceso: ${exceso.toFixed(1)}h`);
+            }
+        } else {
+            alert('✅ Horas registradas correctamente.');
+        }
+        
+        // Limpiar formulario y actualizar interfaz
+        document.getElementById('formularioImputarHoras').style.display = 'none';
+        mostrarTareas();
+        actualizarDashboard();
+    } catch (error) {
+        console.error('Error al imputar horas:', error);
+        alert('❌ Error al registrar las horas. Inténtalo nuevamente.');
     }
     
     // Limpiar y cerrar el formulario
@@ -1292,17 +1450,26 @@ function cerrarHistorialHoras() {
     tareaSeleccionadaDirecta = null;
 }
 
-// Función para cambiar una tarea a inactiva
-function cambiarEstadoTarea(id, estado) {
-    const tareaIndex = tareas.findIndex(t => t.id === id);
-    if (tareaIndex === -1) return;
-    
-    tareas[tareaIndex].estado = estado;
-    guardarDatos();
-    mostrarTareas();
-    alert(`✅ Estado de la tarea cambiado a: ${capitalizar(estado)}`);
+// Función para cambiar el estado de una tarea
+async function cambiarEstadoTarea(id, estado) {
+    try {
+        // Llamar a la API para actualizar el estado de la tarea
+        await ApiClient.updateTaskStatus(id, estado === 'activa' ? 'active' : 'inactive');
+            
+        // Recargar las tareas desde la API
+        tareas = await ApiClient.getTasks();
+            
+        // Actualizar la interfaz
+        mostrarTareas();
+        actualizarDashboard();
+    } catch (error) {
+        console.error('Error al cambiar estado de la tarea:', error);
+        alert('❌ Error al cambiar el estado de la tarea. Inténtalo nuevamente.');
+    }
 }
 
+
+// ==================== FUNCIONES PARA LAS TAREAS ====================
 // Función para mostrar tareas en la tabla
 function mostrarTareas() {
     // Comprobar si queremos mostrar tareas inactivas
@@ -1700,25 +1867,37 @@ function generarAlertasDaily(fecha) {
 let tareaSeleccionadaId = null;
 
 function inicializarActualizarHoras() {
-    // Establecer fechas de hoy como predeterminadas
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaImputacionDesde').value = hoy;
-    document.getElementById('fechaImputacionHasta').value = hoy;
-    
-    // Cargar lista de responsables
-    const responsables = [...new Set(tareas.map(t => t.responsable))].filter(p => p);
-    const selectResponsable = document.getElementById('responsableFiltro');
-    
-    selectResponsable.innerHTML = '<option value="">Seleccionar responsable...</option>';
-    responsables.forEach(responsable => {
-        const option = document.createElement('option');
-        option.value = responsable;
-        option.textContent = responsable;
-        selectResponsable.appendChild(option);
-    });
-    
-    // Limpiar campo de búsqueda
-    document.getElementById('buscarTarea').value = '';
+    try {
+        // Establecer fechas de hoy como predeterminadas
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        // Comprobar si los elementos existen antes de intentar acceder a ellos
+        const fechaDesde = document.getElementById('fechaImputacionDesde');
+        const fechaHasta = document.getElementById('fechaImputacionHasta');
+        
+        if (fechaDesde) fechaDesde.value = hoy;
+        if (fechaHasta) fechaHasta.value = hoy;
+        
+        // Cargar lista de responsables
+        const responsables = [...new Set(tareas.map(t => t.responsable))].filter(p => p);
+        const selectResponsable = document.getElementById('responsableFiltro');
+        
+        if (selectResponsable) {
+            selectResponsable.innerHTML = '<option value="">Seleccionar responsable...</option>';
+            responsables.forEach(responsable => {
+                const option = document.createElement('option');
+                option.value = responsable;
+                option.textContent = responsable;
+                selectResponsable.appendChild(option);
+            });
+        }
+        
+        // Limpiar campo de búsqueda
+        const buscarTarea = document.getElementById('buscarTarea');
+        if (buscarTarea) buscarTarea.value = '';
+    } catch (error) {
+        console.error('Error en inicializarActualizarHoras:', error);
+    }
 }
 
 function inicializarVistaPersonas() {
@@ -2162,73 +2341,102 @@ document.addEventListener('DOMContentLoaded', function() {
 let proyectos = [];
 let contadorIdProyecto = 1;
 
-// Inicializar datos de proyectos
-function inicializarProyectos() {
-    const proyectosGuardados = localStorage.getItem('proyectosIT');
-    const contadorProyectos = localStorage.getItem('contadorIdProyectos');
-    
-    if (proyectosGuardados) {
-        proyectos = JSON.parse(proyectosGuardados);
+// Inicializar datos de proyectos desde la API
+async function inicializarProyectos() {
+    try {
+        // Cargar proyectos desde la API
+        proyectos = await ApiClient.getProjects();
+        
+        // Determinar el siguiente ID de proyecto basado en el máximo ID existente
+        contadorIdProyecto = proyectos.length > 0 ? Math.max(...proyectos.map(p => p.id)) + 1 : 1;
+        
+        console.log('Proyectos cargados correctamente desde la API:', proyectos.length, 'proyectos');
+    } catch (error) {
+        console.error('Error cargando proyectos desde la API, usando valores por defecto', error);
+        proyectos = [];
+        contadorIdProyecto = 1;
     }
-    
-    if (contadorProyectos) {
-        contadorIdProyecto = parseInt(contadorProyectos);
+}
+
+// Cargar proyectos y actualizar la tabla y selectores
+async function cargarProyectos() {
+    try {
+        await inicializarProyectos();
+        cargarTablaProyectos();
+        cargarSelectoresProyectos();
+        console.log('Proyectos cargados y actualizados en la interfaz');
+    } catch (error) {
+        console.error('Error al cargar proyectos:', error);
+        alert('Error al cargar la lista de proyectos. Intente nuevamente.');
     }
-    
-    // Cargar la tabla de proyectos
-    cargarTablaProyectos();
-    
     // Cargar selectores de proyectos en el formulario de tareas
     cargarSelectoresProyectos();
 }
 
-// Guardar datos de proyectos
-function guardarProyectos() {
-    localStorage.setItem('proyectosIT', JSON.stringify(proyectos));
-    localStorage.setItem('contadorIdProyectos', contadorIdProyecto.toString());
+// Guardar datos de proyectos en la API
+// Esta función ya no es necesaria pues cada operación CRUD llama directamente a la API
+async function guardarProyectos() {
+    console.log('La función guardarProyectos() ya no es necesaria, los datos se guardan directamente en la API');
+    // Esta función se mantiene para compatibilidad con el código existente
 }
 
 // Agregar un nuevo proyecto
-function agregarProyecto() {
-    const nombre = document.getElementById('nombreProyecto').value;
-    const codigo = document.getElementById('codigoProyecto').value;
-    const descripcion = document.getElementById('descripcionProyecto').value;
-    const estado = document.getElementById('estadoProyecto').value;
-    
-    if (!nombre || !codigo) {
-        alert('Por favor, ingresa al menos el nombre y código del proyecto.');
-        return;
+async function agregarProyecto() {
+    try {
+        const nombre = document.getElementById('nombreProyecto').value;
+        const codigo = document.getElementById('codigoProyecto').value;
+        const descripcion = document.getElementById('descripcionProyecto').value;
+        const estado = document.getElementById('estadoProyecto').value;
+        
+        if (!nombre || !codigo) {
+            alert('Por favor, ingresa al menos el nombre y código del proyecto.');
+            return;
+        }
+        
+        // Verificar si ya existe un proyecto con el mismo código
+        if (proyectos.some(p => p.codigo === codigo || p.code === codigo)) {
+            alert('Ya existe un proyecto con este código. Por favor, utiliza otro código.');
+            return;
+        }
+        
+        // Crear datos para la API
+        const projectData = {
+            name: nombre,
+            code: codigo,
+            description: descripcion || '',
+            active: estado === 'activo' ? 1 : 0
+        };
+        
+        console.log('Creando nuevo proyecto:', projectData);
+        
+        // Llamar a la API para crear el proyecto
+        const resultado = await ApiClient.createProject(projectData);
+        
+        if (resultado && resultado.id) {
+            console.log('Proyecto creado correctamente:', resultado);
+            contadorIdProyecto = Math.max(contadorIdProyecto, resultado.id + 1);
+            
+            // Recargar proyectos desde la API
+            await inicializarProyectos();
+            
+            // Limpiar formulario
+            document.getElementById('nombreProyecto').value = '';
+            document.getElementById('codigoProyecto').value = '';
+            document.getElementById('descripcionProyecto').value = '';
+            document.getElementById('estadoProyecto').value = 'activo';
+            
+            // Actualizar tabla y selectores
+            cargarTablaProyectos();
+            cargarSelectoresProyectos();
+            
+            alert('✅ Proyecto guardado correctamente');
+        } else {
+            throw new Error('No se pudo crear el proyecto. El servidor no devolvió un ID de proyecto.');
+        }
+    } catch (error) {
+        console.error('Error al crear proyecto:', error);
+        alert('❌ Error al guardar el proyecto: ' + error.message);
     }
-    
-    // Verificar si ya existe un proyecto con el mismo código
-    if (proyectos.some(p => p.codigo === codigo)) {
-        alert('Ya existe un proyecto con este código. Por favor, utiliza otro código.');
-        return;
-    }
-    
-    const nuevoProyecto = {
-        id: contadorIdProyecto++,
-        nombre: nombre,
-        codigo: codigo,
-        descripcion: descripcion || '',
-        estado: estado,
-        fechaCreacion: new Date().toISOString().split('T')[0]
-    };
-    
-    proyectos.push(nuevoProyecto);
-    guardarProyectos();
-    
-    // Limpiar formulario
-    document.getElementById('nombreProyecto').value = '';
-    document.getElementById('codigoProyecto').value = '';
-    document.getElementById('descripcionProyecto').value = '';
-    document.getElementById('estadoProyecto').value = 'activo';
-    
-    // Actualizar tabla y selectores
-    cargarTablaProyectos();
-    cargarSelectoresProyectos();
-    
-    alert('✅ Proyecto guardado correctamente');
 }
 
 // Cargar la tabla de proyectos
@@ -2240,16 +2448,21 @@ function cargarTablaProyectos() {
         const fila = tabla.insertRow();
         
         const celdaCodigo = fila.insertCell(0);
-        celdaCodigo.textContent = proyecto.codigo;
+        celdaCodigo.textContent = proyecto.id;
         
         const celdaNombre = fila.insertCell(1);
-        celdaNombre.textContent = proyecto.nombre;
+        celdaNombre.textContent = proyecto.name;
         
         const celdaDescripcion = fila.insertCell(2);
-        celdaDescripcion.textContent = proyecto.descripcion;
+        celdaDescripcion.textContent = proyecto.description;
         
         const celdaEstado = fila.insertCell(3);
-        celdaEstado.innerHTML = `<span class="status ${proyecto.estado}">${capitalizar(proyecto.estado)}</span>`;
+
+        if(proyecto.active==1){
+            celdaEstado.innerHTML = `<span class="status activo">Activo</span>`;
+        }else{
+            celdaEstado.innerHTML = `<span class="status inactivo">Inactivo</span>`;
+        }
         
         const celdaAcciones = fila.insertCell(4);
         celdaAcciones.innerHTML = `
@@ -2318,66 +2531,99 @@ function eliminarProyecto(id) {
 let usuarios = [];
 let contadorIdUsuario = 1;
 
-// Inicializar datos de usuarios
-function inicializarUsuarios() {
-    const usuariosGuardados = localStorage.getItem('usuariosIT');
-    const contadorUsuarios = localStorage.getItem('contadorIdUsuarios');
-    
-    if (usuariosGuardados) {
-        usuarios = JSON.parse(usuariosGuardados);
+// Inicializar datos de usuarios desde la API
+async function inicializarUsuarios() {
+    try {
+        // Cargar usuarios desde la API
+        usuarios = await ApiClient.getUsers();
+        
+        // Determinar el siguiente ID de usuario basado en el máximo ID existente
+        contadorIdUsuario = usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id)) + 1 : 1;
+        
+        console.log('Usuarios cargados correctamente desde la API:', usuarios.length, 'usuarios');
+    } catch (error) {
+        console.error('Error cargando usuarios desde la API, usando valores por defecto', error);
+        usuarios = [];
+        contadorIdUsuario = 1;
     }
-    
-    if (contadorUsuarios) {
-        contadorIdUsuario = parseInt(contadorUsuarios);
+}
+
+// Cargar usuarios y actualizar la tabla y selectores
+async function cargarUsuarios() {
+    try {
+        await inicializarUsuarios();
+        cargarTablaUsuarios();
+        cargarSelectoresUsuarios();
+        console.log('Usuarios cargados y actualizados en la interfaz');
+    } catch (error) {
+        console.error('Error al cargar usuarios:', error);
+        alert('Error al cargar la lista de usuarios. Intente nuevamente.');
     }
-    
-    // Cargar la tabla de usuarios
-    cargarTablaUsuarios();
-    
-    // Cargar selectores de usuarios en el formulario de tareas
     cargarSelectoresUsuarios();
 }
 
-// Guardar datos de usuarios
-function guardarUsuarios() {
-    localStorage.setItem('usuariosIT', JSON.stringify(usuarios));
-    localStorage.setItem('contadorIdUsuarios', contadorIdUsuario.toString());
+// Guardar datos de usuarios en la API
+// Esta función ya no es necesaria pues cada operación CRUD llama directamente a la API
+async function guardarUsuarios() {
+    console.log('La función guardarUsuarios() ya no es necesaria, los datos se guardan directamente en la API');
+    // Esta función se mantiene para compatibilidad con el código existente
 }
 
 // Agregar un nuevo usuario
-function agregarUsuario() {
-    const nombre = document.getElementById('nombreUsuario').value;
-    const area = document.getElementById('areaUsuario').value;
-    const email = document.getElementById('emailUsuario').value;
-    const cargo = document.getElementById('cargoUsuario').value;
-    
-    if (!nombre) {
-        alert('Por favor, ingresa al menos el nombre del usuario.');
-        return;
+async function agregarUsuario() {
+    try {
+        const nombre = document.getElementById('nombreUsuario').value;
+        const email = document.getElementById('emailUsuario').value;
+        const rol = document.getElementById('rolUsuario').value;
+        
+        if (!nombre || !email) {
+            alert('Por favor, ingresa al menos el nombre y email del usuario.');
+            return;
+        }
+        
+        // Verificar si ya existe un usuario con el mismo email
+        if (usuarios.some(u => u.email === email)) {
+            alert('Ya existe un usuario con este email. Por favor, utiliza otro email.');
+            return;
+        }
+        
+        // Crear datos para la API
+        const userData = {
+            name: nombre,
+            email: email,
+            role: rol,
+            active: true
+        };
+        
+        console.log('Creando nuevo usuario:', userData);
+        
+        // Llamar a la API para crear el usuario
+        const resultado = await ApiClient.createUser(userData);
+        
+        if (resultado && resultado.id) {
+            console.log('Usuario creado correctamente:', resultado);
+            contadorIdUsuario = Math.max(contadorIdUsuario, resultado.id + 1);
+            
+            // Recargar usuarios desde la API
+            usuarios = await ApiClient.getUsers();
+            
+            // Limpiar formulario
+            document.getElementById('nombreUsuario').value = '';
+            document.getElementById('emailUsuario').value = '';
+            document.getElementById('rolUsuario').value = 'usuario';
+            
+            // Actualizar tabla y selectores
+            cargarTablaUsuarios();
+            cargarSelectoresUsuarios();
+            
+            alert('✅ Usuario guardado correctamente');
+        } else {
+            throw new Error('No se pudo crear el usuario. El servidor no devolvió un ID de usuario.');
+        }
+    } catch (error) {
+        console.error('Error al crear usuario:', error);
+        alert('❌ Error al guardar el usuario: ' + error.message);
     }
-    
-    const nuevoUsuario = {
-        id: contadorIdUsuario++,
-        nombre: nombre,
-        area: area,
-        email: email || '',
-        cargo: cargo || '',
-        fechaCreacion: new Date().toISOString().split('T')[0]
-    };
-    
-    usuarios.push(nuevoUsuario);
-    guardarUsuarios();
-    
-    // Limpiar formulario
-    document.getElementById('nombreUsuario').value = '';
-    document.getElementById('emailUsuario').value = '';
-    document.getElementById('cargoUsuario').value = '';
-    
-    // Actualizar tabla y selectores
-    cargarTablaUsuarios();
-    cargarSelectoresUsuarios();
-    
-    alert('✅ Usuario guardado correctamente');
 }
 
 // Cargar la tabla de usuarios
@@ -2388,19 +2634,22 @@ function cargarTablaUsuarios() {
     usuarios.forEach(usuario => {
         const fila = tabla.insertRow();
         
-        const celdaNombre = fila.insertCell(0);
-        celdaNombre.textContent = usuario.nombre;
+        const celdaId = fila.insertCell(0);
+        celdaId.textContent = usuario.id;
+
+        const celdaNombre = fila.insertCell(1);
+        celdaNombre.textContent = usuario.name;
         
-        const celdaArea = fila.insertCell(1);
-        celdaArea.innerHTML = `<span class="area-tag ${usuario.area}">${capitalizar(usuario.area)}</span>`;
+        const celdaRol = fila.insertCell(2);
+        celdaRol.textContent = usuario.role;
         
-        const celdaEmail = fila.insertCell(2);
+        const celdaEmail = fila.insertCell(3);
         celdaEmail.textContent = usuario.email;
         
-        const celdaCargo = fila.insertCell(3);
-        celdaCargo.textContent = usuario.cargo;
+        const celdaActivo = fila.insertCell(4);
+        celdaActivo.textContent = usuario.active ? 'Sí' : 'No';
         
-        const celdaAcciones = fila.insertCell(4);
+        const celdaAcciones = fila.insertCell(5);
         celdaAcciones.innerHTML = `
             <button class="btn btn-sm" onclick="editarUsuario(${usuario.id})">✏️</button>
             <button class="btn btn-sm" onclick="eliminarUsuario(${usuario.id})">❌</button>
@@ -2483,11 +2732,14 @@ function eliminarUsuario(id) {
     alert('✅ Usuario eliminado correctamente');
 }
 
+
+// ==================== INICIALIZAR LA APP ====================
+
 // Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar datos
-    inicializarDatos();
-    inicializarProyectos();
+    // inicializarDatos();
+    // inicializarProyectos();
     inicializarUsuarios();
     
     // Establecer fecha de hoy como predeterminada

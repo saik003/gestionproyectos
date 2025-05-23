@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        #resultado { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; white-space: pre-wrap; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prueba de API - Crear Tarea</h1>
+        
+        <div class="form-group">
+            <label for="title">Título:</label>
+            <input type="text" id="title" value="Tarea de prueba">
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Descripción:</label>
+            <textarea id="description">Esta es una tarea de prueba creada directamente con la API</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="start_date">Fecha de inicio:</label>
+            <input type="date" id="start_date">
+        </div>
+        
+        <div class="form-group">
+            <label for="estimated_hours">Horas estimadas:</label>
+            <input type="number" id="estimated_hours" value="10">
+        </div>
+        
+        <div class="form-group">
+            <label for="project_id">ID del proyecto:</label>
+            <input type="number" id="project_id" value="1">
+        </div>
+        
+        <div class="form-group">
+            <label for="assigned_to">ID del responsable:</label>
+            <input type="number" id="assigned_to" value="1">
+        </div>
+        
+        <button onclick="crearTarea()">Crear Tarea</button>
+        <button onclick="obtenerTareas()">Listar Tareas</button>
+        
+        <div id="resultado"></div>
+    </div>
+    
+    <script>
+        // Establecer la fecha de hoy como predeterminada
+        document.getElementById('start_date').value = new Date().toISOString().split('T')[0];
+        
+        // Función para crear una tarea
+        async function crearTarea() {
+            const resultadoDiv = document.getElementById('resultado');
+            resultadoDiv.innerHTML = "Enviando solicitud...";
+            
+            try {
+                const taskData = {
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    start_date: document.getElementById('start_date').value,
+                    estimated_hours: parseFloat(document.getElementById('estimated_hours').value) || 0,
+                    project_id: parseInt(document.getElementById('project_id').value) || 1,
+                    assigned_to: parseInt(document.getElementById('assigned_to').value) || 1,
+                    created_by: 1,
+                    status: 'active'
+                };
+                
+                console.log('Enviando datos:', taskData);
+                
+                const response = await fetch('http://localhost:5001/api/tasks/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(taskData)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error ${response.status}: ${response.statusText}. ${errorText}`);
+                }
+                
+                const data = await response.json();
+                
+                resultadoDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Tarea creada correctamente</h3>
+                        <p>ID: ${data.id}</p>
+                        <p>Título: ${data.title}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error al crear tarea:', error);
+                resultadoDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error al crear la tarea</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Función para obtener todas las tareas
+        async function obtenerTareas() {
+            const resultadoDiv = document.getElementById('resultado');
+            resultadoDiv.innerHTML = "Obteniendo tareas...";
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/tasks/');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error ${response.status}: ${response.statusText}. ${errorText}`);
+                }
+                
+                const data = await response.json();
+                
+                resultadoDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Tareas obtenidas: ${data.length}</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error al obtener tareas:', error);
+                resultadoDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error al obtener las tareas</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
