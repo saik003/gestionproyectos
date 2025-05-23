@@ -1,0 +1,2509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Seguimiento IT</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    font-weight: 300;
+}
+
+.header p {
+    opacity: 0.9;
+    font-size: 1.1em;
+}
+
+.tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tab {
+    flex: 1;
+    padding: 15px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.tab.active {
+    background: white;
+    border-bottom-color: #007bff;
+    color: #007bff;
+    font-weight: 600;
+}
+
+.tab:hover:not(.active) {
+    background: #e9ecef;
+}
+
+.tab-content {
+    display: none;
+    padding: 30px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.form-section {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border-left: 4px solid #007bff;
+}
+
+.form-section h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+input, select, textarea {
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.btn {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+}
+
+.btn-export {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    margin-left: 10px;
+}
+
+.table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+th {
+    background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+    color: white;
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+tr:hover {
+    background: #f8f9fa;
+}
+
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: center;
+}
+
+.status.pendiente { background: #fff3cd; color: #856404; }
+.status.en-progreso { background: #cce5ff; color: #004085; }
+.status.completado { background: #d4edda; color: #155724; }
+.status.bloqueado { background: #f8d7da; color: #721c24; }
+
+.area-tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: center;
+    color: white;
+}
+
+.area-tag.desarrollo { background: #007bff; }
+.area-tag.diseño { background: #6610f2; }
+.area-tag.pruebas { background: #6f42c1; }
+.area-tag.soporte { background: #e83e8c; }
+.area-tag.mejoras { background: #dc3545; }
+.area-tag.documentación { background: #28a745; }
+.area-tag.reuniones { background: #17a2b8; }
+.area-tag.formación { background: #fd7e14; }
+.area-tag.mantenimiento { background: #6c757d; }
+.area-tag.otros { background: #343a40; }
+
+/* Estilos para el tab Actualizar Horas */
+.tarea-actualizar {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    border-left: 3px solid #007bff;
+}
+
+.tarea-actualizar .tarea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tarea-actualizar .tarea-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.tarea-actualizar .btn-sm {
+    padding: 8px 15px;
+    font-size: 0.85em;
+}
+
+.borde-excedido {
+    border-bottom-color: #ffc107;
+    color: #856404;
+}
+
+.fila-inactiva {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.fila-completada {
+    background-color: #e8f5e9;
+}
+
+.fila-bloqueada {
+    background-color: #ffebee;
+}
+
+.fila-retrasada {
+    background-color: #fff3e0;
+}
+
+.fila-excedida {
+    background-color: #fff8e1;
+}
+
+.fila-resumen {
+    background-color: #e3f2fd;
+    font-weight: bold;
+    border-top: 2px solid #90caf9;
+    border-bottom: 2px solid #90caf9;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.controls-section {
+    margin-bottom: 20px;
+}
+
+.filter-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.checkbox-control {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.checkbox-control input {
+    margin-right: 5px;
+}
+
+#formularioImputarHoras h3, #historialHorasTarea h3 {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 Sistema de Seguimiento IT</h1>
+        <p>Control completo de tareas, horas y progreso de tu equipo</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('registro')">📝 Registro de Tareas</button>
+        <button class="tab" onclick="showTab('seguimiento')">📊 Seguimiento</button>
+        <button class="tab" onclick="showTab('daily')">📅 Vista Daily</button>
+        <button class="tab" onclick="showTab('personas')">👥 Vista por Persona</button>
+        <button class="tab" onclick="showTab('dashboard')">📈 Dashboard</button>
+        <button class="tab" onclick="showTab('reportes')">📋 Reportes</button>
+        <button class="tab" onclick="showTab('proyectos')">🏗️ Maestro de Proyectos</button>
+        <button class="tab" onclick="showTab('usuarios')">👤 Maestro de Usuarios</button>
+    </div>
+
+    <!-- TAB: Registro de Tareas -->
+    <div id="registro" class="tab-content active">
+        <div class="controls-section">
+            <div class="filter-controls">
+                <div class="checkbox-control">
+                    <input type="checkbox" id="mostrarInactivas" onchange="mostrarTareas()">
+                    <label for="mostrarInactivas">Mostrar tareas inactivas</label>
+                </div>
+                <button onclick="mostrarFormularioTarea()" class="btn btn-primary">➕ Nueva Tarea</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <h3>📃 Listado de Tareas</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Área</th>
+                        <th>Proyecto</th>
+                        <th>Descripción</th>
+                        <th>Responsable</th>
+                        <th>Estado</th>
+                        <th>Progreso</th>
+                        <th>Horas Est.</th>
+                        <th>Horas Trab.</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaTareas">
+                    <!-- Las tareas se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Formulario para crear/editar tareas (inicialmente oculto) -->
+        <div id="formularioTarea" class="form-section" style="display: none;">
+            <h3 id="tituloFormularioTarea">➕ Nueva Tarea</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Área</label>
+                    <select id="area">
+                        <option value="desarrollo">Desarrollo</option>
+                        <option value="sistemas">Sistemas</option>
+                        <option value="bbdd">Base de Datos</option>
+                        <option value="bi">Business Intelligence</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Responsable</label>
+                    <select id="responsable">
+                        <option value="">Seleccionar responsable...</option>
+                        <!-- Los usuarios se cargarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Proyecto</label>
+                    <select id="proyecto">
+                        <option value="">Seleccionar proyecto...</option>
+                        <!-- Los proyectos se cargarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prioridad</label>
+                    <select id="prioridad">
+                        <option value="alta">Alta</option>
+                        <option value="media" selected>Media</option>
+                        <option value="baja">Baja</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="estado">
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_progreso">En Progreso</option>
+                        <option value="bloqueado">Bloqueado</option>
+                        <option value="completado">Completado</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="descripcion" placeholder="Descripción detallada de la tarea"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fecha Inicio</label>
+                    <input type="date" id="fechaInicio">
+                </div>
+                <div class="form-group">
+                    <label>Fecha Fin (estimada)</label>
+                    <input type="date" id="fechaFin">
+                </div>
+                <div class="form-group">
+                    <label>Horas Estimadas</label>
+                    <input type="number" id="horasEstimadas" placeholder="0.0" min="0" step="0.5">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button onclick="agregarTarea()" class="btn btn-primary">💾 Guardar Tarea</button>
+                <button onclick="cancelarFormularioTarea()" class="btn">❌ Cancelar</button>
+            </div>
+        </div>
+        
+        <!-- Formulario para imputar horas (inicialmente oculto) -->
+        <div id="formularioImputarHoras" class="form-section" style="display: none;">
+            <h3 id="tituloImputarHoras">⏱️ Imputar Horas</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Usuario que registra las horas</label>
+                    <select id="usuarioImputacion">
+                        <option value="">Seleccionar usuario...</option>
+                        <!-- Los usuarios se cargarán dinámicamente -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Imputación</label>
+                    <input type="date" id="fechaImputacionDirecta">
+                </div>
+                <div class="form-group">
+                    <label>Horas Trabajadas</label>
+                    <input type="number" id="horasImputadas" placeholder="0.0" min="0" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <textarea id="comentariosImputacion" placeholder="Descripción del trabajo realizado"></textarea>
+                </div>
+                <!-- Progress is now calculated automatically based on hours worked -->
+            </div>
+            <div class="form-actions">
+                <button onclick="imputarHorasTarea()" class="btn btn-primary">⏰ Registrar Horas</button>
+                <button onclick="cancelarImputarHoras()" class="btn">❌ Cancelar</button>
+            </div>
+        </div>
+        
+        <!-- Historial de horas por tarea (inicialmente oculto) -->
+        <div id="historialHorasTarea" class="form-section" style="display: none;">
+            <h3 id="tituloHistorialHoras">📅 Historial de Horas</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Horas</th>
+                            <th>Progreso</th>
+                            <th>Comentarios</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorialHoras">
+                        <!-- El historial se cargará aquí -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="form-actions">
+                <button onclick="cerrarHistorialHoras()" class="btn">❌ Cerrar</button>
+            </div>
+        </div>
+    </div>
+<!-- TAB: Actualizar Horas removed - functionality integrated into Registro de Tareas -->
+    <!-- TAB: Seguimiento -->
+    <div id="seguimiento" class="tab-content">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Área</th>
+                        <th>Responsable</th>
+                        <th>Proyecto</th>
+                        <th>Tarea</th>
+                        <th>Estado</th>
+                        <th>Prioridad</th>
+                        <th>Progreso</th>
+                        <th>Horas Est.</th>
+                        <th>Horas Real.</th>
+                        <th>Fecha Fin</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaTareas">
+                    <!-- Las tareas se llenarán dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB: Vista Daily -->
+    <div id="daily" class="tab-content">
+        <div class="form-section">
+            <h3>📅 Seleccionar Fecha para Daily</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fecha Daily</label>
+                    <input type="date" id="fechaDaily">
+                </div>
+                <div class="form-group">
+                    <label>Filtrar por Área</label>
+                    <select id="filtroAreaDaily">
+                        <option value="">Todas las áreas</option>
+                        <option value="desarrollo">Desarrollo</option>
+                        <option value="sistemas">Sistemas</option>
+                        <option value="bbdd">Base de Datos</option>
+                        <option value="bi">Business Intelligence</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="cargarDaily()">🔍 Cargar Daily</button>
+        </div>
+        
+        <div id="contenidoDaily" style="display: none;">
+            <div class="form-section">
+                <h3 id="tituloDaily">📋 Daily del [Fecha]</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Área</th>
+                                <th>Proyecto</th>
+                                <th>Tarea</th>
+                                <th>Horas</th>
+                                <th>Progreso</th>
+                                <th>Comentarios</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tareasDaily">
+                            <!-- Las tareas se llenarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>⚠️ Alertas y Seguimiento</h3>
+                <div id="alertasDaily"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Vista por Persona -->
+    <div id="personas" class="tab-content">
+        <div class="form-section">
+            <h3>👥 Seleccionar Persona</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Responsable</label>
+                    <select id="selectorPersona">
+                        <option value="">Seleccionar persona...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Período</label>
+                    <select id="periodoPersona">
+                        <option value="7">Última semana</option>
+                        <option value="15">Últimos 15 días</option>
+                        <option value="30">Último mes</option>
+                        <option value="todos">Todos los registros</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="cargarVistaPersona()">👁️ Ver Seguimiento</button>
+        </div>
+        
+        <div id="contenidoPersona" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="tareasPersona">0</div>
+                    <div class="stat-label">Tareas Asignadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completadasPersona">0</div>
+                    <div class="stat-label">Completadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="horasPersona">0</div>
+                    <div class="stat-label">Horas Trabajadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="eficienciaPersona">0%</div>
+                    <div class="stat-label">Eficiencia</div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 id="tituloPersona">📊 Seguimiento Detallado</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Proyecto</th>
+                                <th>Tarea</th>
+                                <th>Estado</th>
+                                <th>Progreso</th>
+                                <th>Horas Est.</th>
+                                <th>Horas Real.</th>
+                                <th>Desviación</th>
+                                <th>Fecha Límite</th>
+                                <th>Alerta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPersona">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>📈 Historial de Actividad Diaria</h3>
+                <div id="historialPersona"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Dashboard -->
+    <div id="dashboard" class="tab-content">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalTareas">0</div>
+                <div class="stat-label">Total Tareas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="tareasCompletadas">0</div>
+                <div class="stat-label">Completadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="tareasEnProgreso">0</div>
+                <div class="stat-label">En Progreso</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="horasTotales">0</div>
+                <div class="stat-label">Horas Totales</div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h3>📊 Resumen por Área</h3>
+            <div id="resumenAreas"></div>
+        </div>
+    </div>
+
+    <!-- TAB: Reportes -->
+    <div id="reportes" class="tab-content">
+        <div class="form-section">
+            <h3>📋 Generar Reporte Semanal</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fecha Desde</label>
+                    <input type="date" id="fechaDesde">
+                </div>
+                <div class="form-group">
+                    <label>Fecha Hasta</label>
+                    <input type="date" id="fechaHasta">
+                </div>
+                <div class="form-group">
+                    <label>Filtrar por Área</label>
+                    <select id="filtroArea">
+                        <option value="">Todas las áreas</option>
+                        <option value="desarrollo">Desarrollo</option>
+                        <option value="sistemas">Sistemas</option>
+                        <option value="bbdd">Base de Datos</option>
+                        <option value="bi">Business Intelligence</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn" onclick="generarReporte()">📊 Generar Reporte</button>
+        </div>
+        
+        <div id="reporteResultado" class="form-section" style="display: none;">
+            <h3>📈 Resultados del Reporte</h3>
+            <div id="contenidoReporte"></div>
+        </div>
+    </div>
+    
+    <!-- TAB: Maestro de Proyectos -->
+    <div id="proyectos" class="tab-content">
+        <h3>🏗️ Maestro de Proyectos</h3>
+        
+        <div class="form-section">
+            <h4>Añadir Nuevo Proyecto</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre del Proyecto</label>
+                    <input type="text" id="nombreProyecto" placeholder="Nombre del proyecto">
+                </div>
+                <div class="form-group">
+                    <label>Código</label>
+                    <input type="text" id="codigoProyecto" placeholder="Código identificativo">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="descripcionProyecto" placeholder="Descripción del proyecto"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="estadoProyecto">
+                        <option value="activo">Activo</option>
+                        <option value="pausado">Pausado</option>
+                        <option value="completado">Completado</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button onclick="agregarProyecto()" class="btn btn-primary">Guardar Proyecto</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <h4>Lista de Proyectos</h4>
+            <table id="tablaProyectos" class="data-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Los proyectos se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB: Maestro de Usuarios -->
+    <div id="usuarios" class="tab-content">
+        <h3>👤 Maestro de Usuarios</h3>
+        
+        <div class="form-section">
+            <h4>Añadir Nuevo Usuario</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="nombreUsuario" placeholder="Nombre completo">
+                </div>
+                <div class="form-group">
+                    <label>Área</label>
+                    <select id="areaUsuario">
+                        <option value="desarrollo">Desarrollo</option>
+                        <option value="sistemas">Sistemas</option>
+                        <option value="bbdd">Base de Datos</option>
+                        <option value="bi">Business Intelligence</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="emailUsuario" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Cargo</label>
+                    <input type="text" id="cargoUsuario" placeholder="Puesto de trabajo">
+                </div>
+                <div class="form-actions">
+                    <button onclick="agregarUsuario()" class="btn btn-primary">Guardar Usuario</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <h4>Lista de Usuarios</h4>
+            <table id="tablaUsuarios" class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Área</th>
+                        <th>Email</th>
+                        <th>Cargo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Los usuarios se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function limpiarFormulario() {
+    document.getElementById('responsable').value = '';
+    document.getElementById('proyecto').value = '';
+    document.getElementById('descripcion').value = '';
+    document.getElementById('fechaInicio').value = '';
+    document.getElementById('fechaFin').value = '';
+    document.getElementById('horasEstimadas').value = '';
+}
+
+function guardarDatos() {
+    localStorage.setItem('tareasIT', JSON.stringify(tareas));
+    localStorage.setItem('contadorIdTareas', contadorId.toString());
+    localStorage.setItem('registrosDiarios', JSON.stringify(registrosDiarios));
+}
+
+// Inicializar la aplicación
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar datos
+    inicializarDatos();
+    
+    // Establecer fecha de hoy como predeterminada
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaInicio').value = hoy;
+    document.getElementById('fechaDesde').value = hoy;
+    document.getElementById('fechaHasta').value = hoy;
+    
+    // Cargar datos si existen
+    mostrarTareas();
+    actualizarDashboard();
+});
+// Datos globales
+let tareas = [];
+let contadorId = 1;
+let registrosDiarios = []; // Nuevo array para registros diarios
+
+// Inicializar datos
+function inicializarDatos() {
+    try {
+        tareas = JSON.parse(localStorage.getItem('tareasIT') || '[]');
+        contadorId = parseInt(localStorage.getItem('contadorIdTareas') || '1');
+        registrosDiarios = JSON.parse(localStorage.getItem('registrosDiarios') || '[]');
+    } catch (error) {
+        console.log('Error cargando datos, usando valores por defecto');
+        tareas = [];
+        contadorId = 1;
+        registrosDiarios = [];
+    }
+}
+
+// Función para cambiar tabs
+function showTab(tabName) {
+    // Ocultar todos los tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Mostrar tab seleccionado
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+    
+    // Actualizar contenido si es necesario
+    if (tabName === 'seguimiento') {
+        mostrarTareas();
+    } else if (tabName === 'dashboard') {
+        actualizarDashboard();
+    } else if (tabName === 'daily') {
+        inicializarDaily();
+    } else if (tabName === 'personas') {
+        inicializarVistaPersonas();
+    } else if (tabName === 'proyectos') {
+        cargarProyectos();
+    } else if (tabName === 'usuarios') {
+        cargarUsuarios();
+    }
+}
+
+// Función para agregar tarea
+function agregarTarea() {
+    // Si estamos editando una tarea existente
+    if (tareaEnEdicion) {
+        const tareaIndex = tareas.findIndex(t => t.id === tareaEnEdicion);
+        if (tareaIndex !== -1) {
+            const tarea = tareas[tareaIndex];
+            
+            // Actualizar datos de la tarea
+            tarea.area = document.getElementById('area').value;
+            tarea.responsable = document.getElementById('responsable').value;
+            tarea.proyecto = document.getElementById('proyecto').value;
+            tarea.descripcion = document.getElementById('descripcion').value;
+            tarea.estado = document.getElementById('estado').value;
+            tarea.prioridad = document.getElementById('prioridad').value;
+            tarea.fechaInicio = document.getElementById('fechaInicio').value;
+            tarea.fechaFin = document.getElementById('fechaFin').value;
+            tarea.horasEstimadas = parseFloat(document.getElementById('horasEstimadas').value) || 0;
+            
+            guardarDatos();
+            tareaEnEdicion = null;
+            cancelarFormularioTarea();
+            mostrarTareas();
+            alert('✅ Tarea actualizada correctamente');
+            return;
+        }
+    }
+    
+    // Si es una nueva tarea
+    const nuevaTarea = {
+        id: contadorId++,
+        area: document.getElementById('area').value,
+        responsable: document.getElementById('responsable').value,
+        proyecto: document.getElementById('proyecto').value,
+        descripcion: document.getElementById('descripcion').value,
+        estado: document.getElementById('estado').value,
+        prioridad: document.getElementById('prioridad').value,
+        fechaInicio: document.getElementById('fechaInicio').value,
+        fechaFin: document.getElementById('fechaFin').value,
+        horasEstimadas: parseFloat(document.getElementById('horasEstimadas').value) || 0,
+        horasTrabajadas: 0,
+        progreso: 0,
+        fechaCreacion: new Date().toISOString().split('T')[0]
+    };
+    
+    // Validaciones básicas
+    if (!nuevaTarea.responsable || !nuevaTarea.proyecto || !nuevaTarea.descripcion) {
+        alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
+        return;
+    }
+    
+    tareas.push(nuevaTarea);
+    guardarDatos();
+    cancelarFormularioTarea();
+    mostrarTareas();
+    alert('✅ Tarea creada correctamente');
+}
+
+// Cancelar formulario de tarea
+function cancelarFormularioTarea() {
+    document.getElementById('formularioTarea').style.display = 'none';
+    tareaEnEdicion = null;
+}
+
+// Editar una tarea existente
+function editarTarea(id) {
+    tareaEnEdicion = id;
+    const tarea = tareas.find(t => t.id === id);
+    if (!tarea) return;
+    
+    document.getElementById('formularioTarea').style.display = 'block';
+    document.getElementById('formularioImputarHoras').style.display = 'none';
+    document.getElementById('historialHorasTarea').style.display = 'none';
+    
+    document.getElementById('tituloFormularioTarea').textContent = `✏️ Editar Tarea: ${tarea.proyecto}`;
+    
+    // Llenar formulario con datos de la tarea
+    document.getElementById('area').value = tarea.area;
+    document.getElementById('responsable').value = tarea.responsable;
+    document.getElementById('proyecto').value = tarea.proyecto;
+    document.getElementById('prioridad').value = tarea.prioridad;
+    document.getElementById('estado').value = tarea.estado;
+    document.getElementById('descripcion').value = tarea.descripcion;
+    document.getElementById('fechaInicio').value = tarea.fechaInicio || '';
+    document.getElementById('fechaFin').value = tarea.fechaFin || '';
+    document.getElementById('horasEstimadas').value = tarea.horasEstimadas;
+}
+
+// Mostrar formulario para imputar horas
+function mostrarImputarHoras(id) {
+    tareaSeleccionadaDirecta = id;
+    const tarea = tareas.find(t => t.id === id);
+    if (!tarea) return;
+    
+    document.getElementById('formularioTarea').style.display = 'none';
+    document.getElementById('formularioImputarHoras').style.display = 'block';
+    document.getElementById('historialHorasTarea').style.display = 'none';
+    
+    // Titulo con datos de la tarea
+    document.getElementById('tituloImputarHoras').textContent = `⏱️ Imputar Horas: ${tarea.proyecto} - ${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}`;
+    
+    // Establecer fecha actual como predeterminada
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaImputacionDirecta').value = hoy;
+    
+    // Prepopular con el responsable de la tarea, pero permite cambiarlo
+    document.getElementById('usuarioImputacion').value = ''; 
+    document.getElementById('horasImputadas').value = '';
+    document.getElementById('comentariosImputacion').value = '';
+    
+    // Cargar usuarios en el selector
+    cargarSelectoresUsuariosImputacion();
+}
+
+// Cargar usuarios en el selector de imputación
+function cargarSelectoresUsuariosImputacion() {
+    const selectorUsuarios = document.getElementById('usuarioImputacion');
+    if (selectorUsuarios) {
+        // Obtener usuarios del maestro de usuarios (mismo enfoque que en vista por persona)
+        const usuariosMaestro = JSON.parse(localStorage.getItem('usuariosIT') || '[]');
+        
+        selectorUsuarios.innerHTML = '<option value="">Seleccionar usuario...</option>';
+        
+        if (usuariosMaestro.length > 0) {
+            // Ordenar alfabéticamente por nombre
+            usuariosMaestro.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            
+            // Añadir al selector
+            usuariosMaestro.forEach(usuario => {
+                const option = document.createElement('option');
+                option.value = usuario.nombre;
+                option.textContent = usuario.nombre;
+                selectorUsuarios.appendChild(option);
+            });
+        } else {
+            // Si no hay usuarios en el maestro, usar el array global como respaldo
+            usuarios.forEach(usuario => {
+                const option = document.createElement('option');
+                option.value = usuario.nombre;
+                option.textContent = usuario.nombre;
+                selectorUsuarios.appendChild(option);
+            });
+        }
+    }
+}
+
+// Cancelar imputación de horas
+function cancelarImputarHoras() {
+    document.getElementById('formularioImputarHoras').style.display = 'none';
+    tareaSeleccionadaDirecta = null;
+}
+
+// Mostrar formulario para crear nueva tarea
+function mostrarFormularioTarea() {
+    // Ocultar otros formularios
+    document.getElementById('formularioImputarHoras').style.display = 'none';
+    document.getElementById('historialHorasTarea').style.display = 'none';
+    
+    // Mostrar formulario de tarea
+    document.getElementById('formularioTarea').style.display = 'block';
+    document.getElementById('tituloFormularioTarea').textContent = '➕ Nueva Tarea';
+    
+    // Limpiar campos del formulario
+    document.getElementById('area').value = 'desarrollo';
+    document.getElementById('responsable').value = '';
+    document.getElementById('proyecto').value = '';
+    document.getElementById('descripcion').value = '';
+    document.getElementById('prioridad').value = 'media';
+    document.getElementById('estado').value = 'pendiente';
+    
+    // Establecer fecha de hoy como predeterminada para inicio
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaInicio').value = hoy;
+    document.getElementById('fechaFin').value = '';
+    document.getElementById('horasEstimadas').value = '';
+    
+    // Indicar que estamos creando una nueva tarea
+    tareaEnEdicion = null;
+    
+    // Cargar usuarios y proyectos en los selectores
+    cargarSelectoresUsuarios();
+    cargarSelectoresProyectos();
+}
+
+// Cancelar formulario de tarea
+function cancelarFormularioTarea() {
+    document.getElementById('formularioTarea').style.display = 'none';
+    tareaEnEdicion = null;
+}
+
+// Agregar o editar tarea
+function agregarTarea() {
+    // Si estamos editando una tarea existente
+    if (tareaEnEdicion) {
+        const tareaIndex = tareas.findIndex(t => t.id === tareaEnEdicion);
+        if (tareaIndex === -1) return;
+        
+        // Actualizar tarea existente
+        const tarea = tareas[tareaIndex];
+        tarea.area = document.getElementById('area').value;
+        tarea.responsable = document.getElementById('responsable').value;
+        tarea.proyecto = document.getElementById('proyecto').value;
+        tarea.descripcion = document.getElementById('descripcion').value;
+        tarea.estado = document.getElementById('estado').value;
+        tarea.prioridad = document.getElementById('prioridad').value;
+        tarea.fechaInicio = document.getElementById('fechaInicio').value;
+        tarea.fechaFin = document.getElementById('fechaFin').value;
+        tarea.horasEstimadas = parseFloat(document.getElementById('horasEstimadas').value) || 0;
+        
+        // Recalcular progreso basado en horas estimadas y trabajadas
+        if (tarea.horasEstimadas > 0) {
+            tarea.progreso = Math.min(100, Math.round((tarea.horasTrabajadas / tarea.horasEstimadas) * 100));
+        }
+        
+        guardarDatos();
+        tareaEnEdicion = null;
+        mostrarTareas();
+        cancelarFormularioTarea();
+        alert('Tarea actualizada correctamente');
+        return;
+    }
+    
+    // Si estamos creando una tarea nueva
+    const nuevaTarea = {
+        id: contadorId++,
+        area: document.getElementById('area').value,
+        responsable: document.getElementById('responsable').value,
+        proyecto: document.getElementById('proyecto').value,
+        descripcion: document.getElementById('descripcion').value,
+        estado: document.getElementById('estado').value,
+        prioridad: document.getElementById('prioridad').value,
+        fechaInicio: document.getElementById('fechaInicio').value,
+        fechaFin: document.getElementById('fechaFin').value,
+        horasEstimadas: parseFloat(document.getElementById('horasEstimadas').value) || 0,
+        horasTrabajadas: 0,
+        progreso: 0, // Siempre inicia en 0
+        fechaCreacion: new Date().toISOString().split('T')[0]
+    };
+    
+    // Validaciones básicas
+    if (!nuevaTarea.responsable || !nuevaTarea.proyecto || !nuevaTarea.descripcion) {
+        alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
+        return;
+    }
+    
+    tareas.push(nuevaTarea);
+    guardarDatos();
+    mostrarTareas();
+    cancelarFormularioTarea();
+    alert('Tarea creada correctamente');
+}
+
+// Imputar horas a una tarea
+function imputarHorasTarea() {
+    if (!tareaSeleccionadaDirecta) return;
+    
+    const usuarioRegistra = document.getElementById('usuarioImputacion').value;
+    const fechaImputacion = document.getElementById('fechaImputacionDirecta').value;
+    const horasImputadas = parseFloat(document.getElementById('horasImputadas').value) || 0;
+    const comentarios = document.getElementById('comentariosImputacion').value;
+    
+    // Validaciones
+    if (!usuarioRegistra) {
+        alert('Por favor selecciona el usuario que registra las horas');
+        return;
+    }
+    
+    if (!fechaImputacion) {
+        alert('Por favor selecciona la fecha de imputación');
+        return;
+    }
+    
+    if (horasImputadas <= 0) {
+        alert('Por favor ingresa las horas trabajadas');
+        return;
+    }
+    
+    if (!comentarios) {
+        alert('Por favor describe el trabajo realizado');
+        return;
+    }
+    
+    // Actualizar la tarea
+    const tareaIndex = tareas.findIndex(t => t.id === tareaSeleccionadaDirecta);
+    if (tareaIndex === -1) return;
+    
+    const tarea = tareas[tareaIndex];
+    
+    // Actualizar horas trabajadas
+    tarea.horasTrabajadas += horasImputadas;
+    
+    // Calcular progreso basado en horas estimadas vs horas trabajadas
+    // Si no hay horas estimadas, mantener el progreso en 0
+    if (tarea.horasEstimadas > 0) {
+        tarea.progreso = Math.min(100, Math.round((tarea.horasTrabajadas / tarea.horasEstimadas) * 100));
+    } else {
+        tarea.progreso = 0;
+    }
+    
+    // Determinar estado basado en el progreso calculado
+    if (tarea.progreso === 100 && tarea.estado !== 'completado') {
+        tarea.estado = 'completado';
+    } else if (tarea.progreso > 0 && tarea.progreso < 100 && tarea.estado === 'pendiente') {
+        tarea.estado = 'en_progreso';
+    }
+    
+    // Si se completó la tarea y no tiene fecha fin, establecer hoy como fecha fin
+    if (tarea.estado === 'completado' && !tarea.fechaFin) {
+        tarea.fechaFin = fechaImputacion;
+    }
+    
+    // Crear registro diario
+    const registroDiario = {
+        id: Date.now(),
+        tareaId: tarea.id,
+        fecha: fechaImputacion,
+        responsable: tarea.responsable,  // Mantener el responsable original de la tarea
+        usuarioRegistra: usuarioRegistra, // Quien registra las horas
+        proyecto: tarea.proyecto,
+        descripcionTarea: tarea.descripcion,
+        horasTrabajadas: horasImputadas,
+        comentarios: comentarios,
+        progreso: tarea.progreso, // Usar el progreso calculado
+        area: tarea.area
+    };
+    
+    registrosDiarios.push(registroDiario);
+    
+    // Guardar datos
+    guardarDatos();
+    
+    // Mostrar mensaje
+    alert(`✅ Horas registradas correctamente.\nUsuario: ${usuarioRegistra}\nFecha: ${fechaImputacion}\nHoras: ${horasImputadas}h\nTotal acumulado: ${tarea.horasTrabajadas}h\nProgreso calculado: ${tarea.progreso}%`);
+    
+    // Mostrar alerta si se excedió en horas
+    if (tarea.horasTrabajadas > tarea.horasEstimadas) {
+        const exceso = tarea.horasTrabajadas - tarea.horasEstimadas;
+        alert(`⚠️ ALERTA: Esta tarea ha excedido las horas estimadas.\nHoras estimadas: ${tarea.horasEstimadas}h\nHoras trabajadas: ${tarea.horasTrabajadas}h\nExceso: ${exceso.toFixed(1)}h`);
+    }
+    
+    // Limpiar y cerrar el formulario
+    cancelarImputarHoras();
+    mostrarTareas();
+}
+
+// Mostrar historial de horas de una tarea
+function mostrarHistorialHorasTarea(id) {
+    tareaSeleccionadaDirecta = id;
+    const tarea = tareas.find(t => t.id === id);
+    if (!tarea) return;
+    
+    document.getElementById('formularioTarea').style.display = 'none';
+    document.getElementById('formularioImputarHoras').style.display = 'none';
+    document.getElementById('historialHorasTarea').style.display = 'block';
+    
+    // Titulo con datos de la tarea
+    document.getElementById('tituloHistorialHoras').textContent = `📅 Historial: ${tarea.proyecto} - ${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}`;
+    
+    // Obtener registros de esta tarea
+    const registrosTarea = registrosDiarios.filter(r => r.tareaId === id);
+    
+    // Ordenar por fecha (más reciente primero)
+    registrosTarea.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    // Mostrar en la tabla
+    const tabla = document.getElementById('tablaHistorialHoras');
+    tabla.innerHTML = '';
+    
+    if (registrosTarea.length === 0) {
+        const fila = tabla.insertRow();
+        fila.innerHTML = '<td colspan="5" class="text-center">No hay registros de horas para esta tarea</td>';
+        return;
+    }
+    
+    registrosTarea.forEach(registro => {
+        const fila = tabla.insertRow();
+        
+        // Formatear fecha a formato local
+        const fecha = new Date(registro.fecha);
+        const fechaFormateada = fecha.toLocaleDateString();
+        
+        fila.innerHTML = `
+            <td>${fechaFormateada}</td>
+            <td>${registro.usuarioRegistra || registro.responsable}</td>
+            <td>${registro.horasTrabajadas}h</td>
+            <td>${registro.progreso}%</td>
+            <td>${registro.comentarios}</td>
+        `;
+    });
+}
+
+// Cerrar el historial de horas
+function cerrarHistorialHoras() {
+    document.getElementById('historialHorasTarea').style.display = 'none';
+    tareaSeleccionadaDirecta = null;
+}
+
+// Función para cambiar una tarea a inactiva
+function cambiarEstadoTarea(id, estado) {
+    const tareaIndex = tareas.findIndex(t => t.id === id);
+    if (tareaIndex === -1) return;
+    
+    tareas[tareaIndex].estado = estado;
+    guardarDatos();
+    mostrarTareas();
+    alert(`✅ Estado de la tarea cambiado a: ${capitalizar(estado)}`);
+}
+
+// Función para mostrar tareas en la tabla
+function mostrarTareas() {
+    // Comprobar si queremos mostrar tareas inactivas
+    const mostrarInactivas = document.getElementById('mostrarInactivas').checked;
+    
+    // Filtrar tareas según el checkbox
+    let tareasFiltradas = mostrarInactivas ? tareas : tareas.filter(t => t.estado !== 'inactivo');
+    
+    // Ordenar tareas: primero activas (no completadas), luego completadas, finalmente inactivas
+    tareasFiltradas.sort((a, b) => {
+        // Primero por estado
+        if (a.estado === 'inactivo' && b.estado !== 'inactivo') return 1;
+        if (a.estado !== 'inactivo' && b.estado === 'inactivo') return -1;
+        if (a.estado === 'completado' && b.estado !== 'completado') return 1;
+        if (a.estado !== 'completado' && b.estado === 'completado') return -1;
+        
+        // Luego por fecha de creación (más recientes primero)
+        return new Date(b.fechaCreacion) - new Date(a.fechaCreacion);
+    });
+    
+    // Mostrar en la tabla de tareas (pestaña principal)
+    const tablaTareas = document.getElementById('tablaTareas');
+    if (tablaTareas) {
+        tablaTareas.innerHTML = '';
+        
+        if (tareasFiltradas.length === 0) {
+            const fila = tablaTareas.insertRow();
+            fila.innerHTML = '<td colspan="10" class="text-center">No hay tareas registradas</td>';
+        } else {
+            tareasFiltradas.forEach(tarea => {
+                const fila = tablaTareas.insertRow();
+                
+                // Calcular desviación en horas
+                const desviacionHoras = tarea.horasTrabajadas - tarea.horasEstimadas;
+                
+                // Determinar clase CSS según estado
+                let filaClase = '';
+                if (tarea.estado === 'inactivo') filaClase = 'fila-inactiva';
+                else if (tarea.estado === 'completado') filaClase = 'fila-completada';
+                else if (tarea.estado === 'bloqueado') filaClase = 'fila-bloqueada';
+                
+                // Verificar si está retrasada según fecha fin
+                const hoy = new Date().toISOString().split('T')[0];
+                let retrasada = false;
+                if (tarea.fechaFin && tarea.fechaFin < hoy && tarea.estado !== 'completado' && tarea.estado !== 'inactivo') {
+                    retrasada = true;
+                    filaClase += ' fila-retrasada';
+                }
+                
+                fila.className = filaClase;
+                
+                fila.innerHTML = `
+                    <td>${tarea.id}</td>
+                    <td>${tarea.area ? `<span class="area-tag ${tarea.area}">${capitalizar(tarea.area)}</span>` : ''}</td>
+                    <td>${tarea.proyecto}</td>
+                    <td>${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}</td>
+                    <td>${tarea.responsable}</td>
+                    <td><span class="status ${tarea.estado}">${capitalizar(tarea.estado)}</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${tarea.progreso}%"></div>
+                        </div>
+                        ${tarea.progreso}%
+                    </td>
+                    <td>${tarea.horasEstimadas}h</td>
+                    <td>${tarea.horasTrabajadas}h</td>
+                    <td>
+                        <button class="btn btn-sm" onclick="mostrarImputarHoras(${tarea.id})" title="Imputar horas">⏱️</button>
+                        <button class="btn btn-sm" onclick="mostrarHistorialHorasTarea(${tarea.id})" title="Ver historial">📊</button>
+                        <button class="btn btn-sm" onclick="editarTarea(${tarea.id})" title="Editar tarea">✏️</button>
+                        ${tarea.estado !== 'inactivo' ? 
+                          `<button class="btn btn-sm" onclick="cambiarEstadoTarea(${tarea.id}, 'inactivo')" title="Marcar como inactiva">🚫</button>` :
+                          `<button class="btn btn-sm" onclick="cambiarEstadoTarea(${tarea.id}, 'pendiente')" title="Reactivar tarea">↩️</button>`
+                        }
+                    </td>
+                `;
+            });
+        }
+    }
+}
+
+// Variable para guardar el ID de la tarea seleccionada para imputar horas o ver historial
+let tareaSeleccionadaDirecta = null;
+let tareaEnEdicion = null;
+
+// Función para actualizar dashboard
+function actualizarDashboard() {
+    const totalTareas = tareas.length;
+    const completadas = tareas.filter(t => t.estado === 'completado').length;
+    const enProgreso = tareas.filter(t => t.estado === 'en_progreso').length;
+    const horasTotales = tareas.reduce((sum, t) => sum + t.horasTrabajadas, 0);
+
+    document.getElementById('totalTareas').textContent = totalTareas;
+    document.getElementById('tareasCompletadas').textContent = completadas;
+    document.getElementById('tareasEnProgreso').textContent = enProgreso;
+    document.getElementById('horasTotales').textContent = horasTotales + 'h';
+
+    // Resumen por área
+    const areas = ['desarrollo', 'sistemas', 'bbdd', 'bi'];
+    const resumenContainer = document.getElementById('resumenAreas');
+    resumenContainer.innerHTML = '';
+
+    areas.forEach(area => {
+        const tareasArea = tareas.filter(t => t.area === area);
+        const completadasArea = tareasArea.filter(t => t.estado === 'completado').length;
+        const horasArea = tareasArea.reduce((sum, t) => sum + t.horasTrabajadas, 0);
+
+        const areaDiv = document.createElement('div');
+        areaDiv.className = 'stat-card';
+        areaDiv.innerHTML = `
+            <h4>${capitalizar(area)}</h4>
+            <p>Tareas: ${tareasArea.length} | Completadas: ${completadasArea}</p>
+            <p>Horas trabajadas: ${horasArea}h</p>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${tareasArea.length ? (completadasArea/tareasArea.length)*100 : 0}%"></div>
+            </div>
+        `;
+        resumenContainer.appendChild(areaDiv);
+    });
+}
+
+// Función para generar reporte
+function generarReporte() {
+    const fechaDesde = document.getElementById('fechaDesde').value;
+    const fechaHasta = document.getElementById('fechaHasta').value;
+    const filtroArea = document.getElementById('filtroArea').value;
+
+    let tareasFiltradas = tareas;
+
+    // Filtrar por fechas
+    if (fechaDesde) {
+        tareasFiltradas = tareasFiltradas.filter(t => t.fechaCreacion >= fechaDesde);
+    }
+    if (fechaHasta) {
+        tareasFiltradas = tareasFiltradas.filter(t => t.fechaCreacion <= fechaHasta);
+    }
+
+    // Filtrar por área
+    if (filtroArea) {
+        tareasFiltradas = tareasFiltradas.filter(t => t.area === filtroArea);
+    }
+
+    // Generar contenido del reporte
+    const reporteDiv = document.getElementById('contenidoReporte');
+    const totalHoras = tareasFiltradas.reduce((sum, t) => sum + t.horasTrabajadas, 0);
+    const completadas = tareasFiltradas.filter(t => t.estado === 'completado').length;
+
+    reporteDiv.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">${tareasFiltradas.length}</div>
+                <div class="stat-label">Tareas en el período</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${completadas}</div>
+                <div class="stat-label">Completadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${totalHoras}h</div>
+                <div class="stat-label">Horas trabajadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${tareasFiltradas.length ? Math.round((completadas/tareasFiltradas.length)*100) : 0}%</div>
+                <div class="stat-label">Tasa de finalización</div>
+            </div>
+        </div>
+        <h4>Detalle por responsable:</h4>
+        <div id="detalleResponsables"></div>
+    `;
+
+    // Detalle por responsable
+    const responsables = [...new Set(tareasFiltradas.map(t => t.responsable))];
+    const detalleDiv = document.getElementById('detalleResponsables');
+    
+    responsables.forEach(responsable => {
+        const tareasResp = tareasFiltradas.filter(t => t.responsable === responsable);
+        const horasResp = tareasResp.reduce((sum, t) => sum + t.horasTrabajadas, 0);
+        const completadasResp = tareasResp.filter(t => t.estado === 'completado').length;
+        
+        const respDiv = document.createElement('div');
+        respDiv.className = 'stat-card';
+        respDiv.innerHTML = `
+            <h5>${responsable}</h5>
+            <p>Tareas: ${tareasResp.length} | Completadas: ${completadasResp} | Horas: ${horasResp}h</p>
+        `;
+        detalleDiv.appendChild(respDiv);
+    });
+
+    document.getElementById('reporteResultado').style.display = 'block';
+}
+
+// Función para eliminar tarea
+function eliminarTarea(id) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+        tareas = tareas.filter(t => t.id !== id);
+        guardarDatos();
+        mostrarTareas();
+        actualizarDashboard();
+    }
+}
+
+// Función para exportar a Excel (CSV)
+function exportarExcel() {
+    let csv = 'Área,Responsable,Proyecto,Descripción,Estado,Prioridad,Fecha Inicio,Fecha Fin,Horas Estimadas,Horas Trabajadas,Progreso %\n';
+    
+    tareas.forEach(tarea => {
+        csv += `"${tarea.area}","${tarea.responsable}","${tarea.proyecto}","${tarea.descripcion}","${tarea.estado}","${tarea.prioridad}","${tarea.fechaInicio}","${tarea.fechaFin}","${tarea.horasEstimadas}","${tarea.horasTrabajadas}","${tarea.progreso}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `seguimiento_it_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// ==================== FUNCIONES VISTA DAILY ====================
+
+function inicializarDaily() {
+    // Establecer fecha de ayer por defecto para ver qué se hizo
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    document.getElementById('fechaDaily').value = ayer.toISOString().split('T')[0];
+}
+
+function cargarDaily() {
+    const fechaSeleccionada = document.getElementById('fechaDaily').value;
+    const areaFiltro = document.getElementById('filtroAreaDaily').value;
+    
+    if (!fechaSeleccionada) {
+        alert('Por favor selecciona una fecha');
+        return;
+    }
+
+    // Filtrar registros del día seleccionado
+    let registrosDia = registrosDiarios.filter(r => r.fecha === fechaSeleccionada);
+    
+    if (areaFiltro) {
+        registrosDia = registrosDia.filter(r => r.area === areaFiltro);
+    }
+
+    // Mostrar contenido
+    document.getElementById('contenidoDaily').style.display = 'block';
+    document.getElementById('tituloDaily').textContent = `📋 Daily del ${fechaSeleccionada}`;
+    
+    const tablaDaily = document.getElementById('tareasDaily');
+    tablaDaily.innerHTML = '';
+
+    if (registrosDia.length === 0) {
+        tablaDaily.innerHTML = '<tr><td colspan="7" class="text-center">No hay registros para esta fecha y filtros seleccionados.</td></tr>';
+        return;
+    }
+    
+    // Ordenar por usuario y luego por proyecto
+    registrosDia.sort((a, b) => {
+        const usuarioA = a.usuarioRegistra || a.responsable;
+        const usuarioB = b.usuarioRegistra || b.responsable;
+        
+        if (usuarioA !== usuarioB) {
+            return usuarioA.localeCompare(usuarioB);
+        }
+        return a.proyecto.localeCompare(b.proyecto);
+    });
+    
+    // Para calcular los totales por usuario
+    const horasPorUsuario = {};
+    
+    // Mostrar cada registro como una fila en la tabla
+    registrosDia.forEach(registro => {
+        const fila = tablaDaily.insertRow();
+        
+        // Determinar el usuario que realizó el trabajo (registró las horas)
+        const usuario = registro.usuarioRegistra || registro.responsable;
+        
+        // Acumular horas por usuario para mostrar totales
+        if (!horasPorUsuario[usuario]) {
+            horasPorUsuario[usuario] = 0;
+        }
+        horasPorUsuario[usuario] += registro.horasTrabajadas;
+        
+        // Obtener la tarea completa para comprobar si excede las horas estimadas
+        const tareaCompleta = tareas.find(t => t.id === registro.tareaId);
+        const excedida = tareaCompleta && tareaCompleta.horasTrabajadas > tareaCompleta.horasEstimadas;
+        
+        // Aplicar clase a la fila si la tarea excede las horas estimadas
+        if (excedida) {
+            fila.className = 'fila-excedida';
+        }
+        
+        // Agregar las celdas con la información
+        fila.innerHTML = `
+            <td>${usuario}</td>
+            <td><span class="area-tag ${registro.area}">${capitalizar(registro.area)}</span></td>
+            <td>${registro.proyecto}</td>
+            <td>${registro.descripcionTarea.substring(0, 50)}${registro.descripcionTarea.length > 50 ? '...' : ''}</td>
+            <td>${registro.horasTrabajadas}h</td>
+            <td>
+                <div class="progress-bar">
+                    <div class="progress" style="width: ${registro.progreso}%"></div>
+                </div>
+                ${registro.progreso}%
+            </td>
+            <td>${registro.comentarios}</td>
+        `;
+    });
+    
+    // Agregar fila de resumen con el total de horas por usuario
+    Object.keys(horasPorUsuario).forEach(usuario => {
+        const totalHoras = horasPorUsuario[usuario];
+        const filaResumen = tablaDaily.insertRow();
+        filaResumen.className = 'fila-resumen';
+        filaResumen.innerHTML = `
+            <td colspan="4"><strong>Total horas de ${usuario}:</strong></td>
+            <td><strong>${totalHoras}h</strong></td>
+            <td colspan="2"></td>
+        `;
+    });
+
+    // Generar alertas
+    generarAlertasDaily(fechaSeleccionada);
+}
+
+function generarAlertasDaily(fecha) {
+    const alertasContainer = document.getElementById('alertasDaily');
+    alertasContainer.innerHTML = '';
+    
+    // Obtener tareas que deberían haber tenido actividad
+    const tareasActivas = tareas.filter(t => 
+        t.estado === 'en-progreso' && 
+        new Date(t.fechaInicio) <= new Date(fecha) &&
+        (!t.fechaFin || new Date(t.fechaFin) >= new Date(fecha))
+    );
+    
+    const registrosDia = registrosDiarios.filter(r => r.fecha === fecha);
+    const personasConActividad = [...new Set(registrosDia.map(r => r.responsable))];
+    const personasActivas = [...new Set(tareasActivas.map(t => t.responsable))];
+    
+    // Personas sin actividad
+    const personasSinActividad = personasActivas.filter(p => !personasConActividad.includes(p));
+    
+    if (personasSinActividad.length > 0) {
+        const alertaDiv = document.createElement('div');
+        alertaDiv.className = 'alerta advertencia';
+        alertaDiv.innerHTML = `⚠️ <strong>Sin actividad registrada:</strong> ${personasSinActividad.join(', ')}`;
+        alertasContainer.appendChild(alertaDiv);
+    }
+    
+    // Tareas con retraso
+    const tareasConRetraso = tareasActivas.filter(t => 
+        t.fechaFin && new Date(fecha) > new Date(t.fechaFin) && t.estado !== 'completado'
+    );
+    
+    if (tareasConRetraso.length > 0) {
+        const alertaDiv = document.createElement('div');
+        alertaDiv.className = 'alerta critica';
+        alertaDiv.innerHTML = `🚨 <strong>Tareas con retraso:</strong> ${tareasConRetraso.length} tareas pasaron su fecha límite`;
+        alertasContainer.appendChild(alertaDiv);
+    }
+    
+    // Tareas que exceden horas estimadas
+    const tareasExcedidas = tareas.filter(t => t.horasTrabajadas > t.horasEstimadas);
+    
+    if (tareasExcedidas.length > 0) {
+        const alertaDiv = document.createElement('div');
+        alertaDiv.className = 'alerta advertencia';
+        alertaDiv.innerHTML = `⚠️ <strong>Tareas con horas excedidas:</strong> ${tareasExcedidas.length} tareas superan las horas estimadas`;
+        
+        // Agregar detalle de tareas excedidas
+        if (tareasExcedidas.length <= 5) { // Solo mostrar detalle si hay pocas tareas excedidas
+            const detalleHTML = tareasExcedidas.map(t => {
+                const exceso = (t.horasTrabajadas - t.horasEstimadas).toFixed(1);
+                return `<li>${t.proyecto} - ${t.descripcion.substring(0, 30)}... (${t.horasTrabajadas}h / ${t.horasEstimadas}h est., exceso: ${exceso}h)</li>`;
+            }).join('');
+            
+            alertaDiv.innerHTML += `<ul style="margin-top: 8px; font-size: 0.9em;">${detalleHTML}</ul>`;
+        }
+        
+        alertasContainer.appendChild(alertaDiv);
+    }
+    
+    if (personasSinActividad.length === 0 && tareasConRetraso.length === 0 && tareasExcedidas.length === 0) {
+        const alertaDiv = document.createElement('div');
+        alertaDiv.className = 'alerta info';
+        alertaDiv.innerHTML = `✅ <strong>Sin alertas:</strong> Todo el equipo registró actividad correctamente`;
+        alertasContainer.appendChild(alertaDiv);
+    }
+}
+
+// ==================== FUNCIONES ACTUALIZAR HORAS ====================
+
+let tareaSeleccionadaId = null;
+
+function inicializarActualizarHoras() {
+    // Establecer fechas de hoy como predeterminadas
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaImputacionDesde').value = hoy;
+    document.getElementById('fechaImputacionHasta').value = hoy;
+    
+    // Cargar lista de responsables
+    const responsables = [...new Set(tareas.map(t => t.responsable))].filter(p => p);
+    const selectResponsable = document.getElementById('responsableFiltro');
+    
+    selectResponsable.innerHTML = '<option value="">Seleccionar responsable...</option>';
+    responsables.forEach(responsable => {
+        const option = document.createElement('option');
+        option.value = responsable;
+        option.textContent = responsable;
+        selectResponsable.appendChild(option);
+    });
+    
+    // Limpiar campo de búsqueda
+    document.getElementById('buscarTarea').value = '';
+}
+
+function inicializarVistaPersonas() {
+    const selectorPersona = document.getElementById('selectorPersona');
+    selectorPersona.innerHTML = '<option value="">Seleccionar persona...</option>';
+    
+    // Usar la lista de usuarios del maestro en lugar de extraerlos de las tareas
+    const usuariosMaestro = JSON.parse(localStorage.getItem('usuariosMaestro') || '[]');
+    
+    if (usuariosMaestro.length > 0) {
+        // Ordenar alfabéticamente por nombre
+        usuariosMaestro.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        
+        // Añadir al selector
+        usuariosMaestro.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.nombre;
+            option.textContent = usuario.nombre;
+            selectorPersona.appendChild(option);
+        });
+    } else {
+        // Si no hay usuarios en el maestro, usar los responsables de las tareas como fallback
+        const responsables = [...new Set(tareas.map(t => t.responsable))].filter(r => r);
+        responsables.sort();
+        
+        responsables.forEach(resp => {
+            const option = document.createElement('option');
+            option.value = resp;
+            option.textContent = resp;
+            selectorPersona.appendChild(option);
+        });
+    }
+}
+
+function filtrarTareasResponsable() {
+    const responsable = document.getElementById('responsableFiltro').value;
+    const departamento = document.getElementById('departamentoFiltro').value;
+    const estado = document.getElementById('estadoFiltro').value;
+    
+    // Iniciar con todas las tareas
+    let tareasFiltradas = [...tareas];
+    
+    // Aplicar filtros si están seleccionados
+    if (responsable) {
+        tareasFiltradas = tareasFiltradas.filter(t => t.responsable === responsable);
+    }
+    
+    if (departamento) {
+        tareasFiltradas = tareasFiltradas.filter(t => t.area === departamento);
+    }
+    
+    if (estado) {
+        tareasFiltradas = tareasFiltradas.filter(t => t.estado === estado);
+    }
+    
+    // Mostrar tareas disponibles si hay resultados
+    if (tareasFiltradas.length > 0 || responsable || departamento || estado) {
+        mostrarTareasActualizar(tareasFiltradas);
+    } else {
+        document.getElementById('tareasDisponibles').style.display = 'none';
+    }
+}
+
+function buscarTareasPorNombre() {
+    const textoBusqueda = document.getElementById('buscarTarea').value.toLowerCase();
+    
+    if (!textoBusqueda) {
+        alert('Por favor ingresa un texto para buscar');
+        return;
+    }
+    
+    // Buscar en nombre de proyecto y descripción
+    const tareasFiltradas = tareas.filter(t => 
+        t.proyecto.toLowerCase().includes(textoBusqueda) || 
+        t.descripcion.toLowerCase().includes(textoBusqueda)
+    );
+    
+    mostrarTareasActualizar(tareasFiltradas);
+}
+
+function mostrarTareasActualizar(tareasFiltradas) {
+    const contenedor = document.getElementById('listaTareasActualizar');
+    contenedor.innerHTML = '';
+    
+    if (tareasFiltradas.length === 0) {
+        contenedor.innerHTML = '<div class="alerta info">No hay tareas disponibles con los criterios seleccionados.</div>';
+        document.getElementById('tareasDisponibles').style.display = 'block';
+        return;
+    }
+    
+    tareasFiltradas.forEach(tarea => {
+        const tareaDiv = document.createElement('div');
+        tareaDiv.className = 'tarea-actualizar';
+        tareaDiv.setAttribute('data-id', tarea.id);
+        
+        // Calcular si está excedida en horas
+        const excedida = tarea.horasTrabajadas > tarea.horasEstimadas;
+        const claseBorde = excedida ? 'borde-excedido' : '';
+        const iconoExcedido = excedida ? '⚠️ ' : '';
+        
+        tareaDiv.innerHTML = `
+            <div class="tarea-header ${claseBorde}">
+                <span><strong>${iconoExcedido}${tarea.proyecto}</strong> - ${tarea.descripcion.substring(0, 50)}${tarea.descripcion.length > 50 ? '...' : ''}</span>
+                <span class="status ${tarea.estado}">${capitalizar(tarea.estado)}</span>
+            </div>
+            <div class="tarea-details">
+                <div>Progreso: ${tarea.progreso}%</div>
+                <div>Horas estimadas: ${tarea.horasEstimadas}h</div>
+                <div>Horas trabajadas: ${tarea.horasTrabajadas}h ${excedida ? '<span style="color: #dc3545;">⚠️ Excedido</span>' : ''}</div>
+                <div>Fecha límite: ${tarea.fechaFin || 'No definida'}</div>
+            </div>
+            <button class="btn btn-sm" onclick="seleccionarTareaActualizar(${tarea.id})">Actualizar esta tarea</button>
+        `;
+        
+        contenedor.appendChild(tareaDiv);
+    });
+    
+    document.getElementById('tareasDisponibles').style.display = 'block';
+}
+
+function seleccionarTareaActualizar(id) {
+    tareaSeleccionadaId = id;
+    const tarea = tareas.find(t => t.id === id);
+    
+    if (!tarea) return;
+    
+    // Mostrar el formulario de actualización
+    document.getElementById('tituloTareaSeleccionada').textContent = `✏️ Actualizar: ${tarea.proyecto} - ${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}`;
+    
+    // Establecer fecha actual como predeterminada para imputación
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaImputacion').value = hoy;
+    
+    // Prepopular con el responsable de la tarea, pero permite cambiarlo
+    document.getElementById('usuarioRegistra').value = tarea.responsable; 
+    
+    // Configurar campos de actualización
+    document.getElementById('nuevoProgreso').value = tarea.progreso;
+    document.getElementById('horasHoy').value = '';
+    document.getElementById('comentariosHoy').value = '';
+    document.getElementById('nuevoEstado').value = '';
+    
+    // Mostrar resumen de la tarea
+    const resumenHTML = `
+        <div><strong>Área:</strong> ${capitalizar(tarea.area)}</div>
+        <div><strong>Responsable:</strong> ${tarea.responsable}</div>
+        <div><strong>Estado actual:</strong> <span class="status ${tarea.estado}">${capitalizar(tarea.estado)}</span></div>
+        <div><strong>Progreso actual:</strong> ${tarea.progreso}%</div>
+        <div><strong>Horas estimadas:</strong> ${tarea.horasEstimadas}h</div>
+        <div><strong>Horas trabajadas:</strong> ${tarea.horasTrabajadas}h</div>
+        <div><strong>Fecha inicio:</strong> ${tarea.fechaInicio || 'No definida'}</div>
+        <div><strong>Fecha fin:</strong> ${tarea.fechaFin || 'No definida'}</div>
+    `;
+    
+    document.getElementById('resumenTarea').innerHTML = resumenHTML;
+    document.getElementById('actualizarHorasForm').style.display = 'block';
+}
+
+function actualizarHorasTarea() {
+    if (!tareaSeleccionadaId) return;
+    
+    const usuarioRegistra = document.getElementById('usuarioRegistra').value;
+    const fechaImputacion = document.getElementById('fechaImputacion').value;
+    const horasHoy = parseFloat(document.getElementById('horasHoy').value) || 0;
+    const nuevoProgreso = parseInt(document.getElementById('nuevoProgreso').value);
+    const nuevoEstado = document.getElementById('nuevoEstado').value;
+    const comentariosHoy = document.getElementById('comentariosHoy').value;
+    
+    // Validaciones
+    if (!usuarioRegistra) {
+        alert('Por favor ingresa el nombre del usuario que registra las horas');
+        return;
+    }
+    
+    if (!fechaImputacion) {
+        alert('Por favor selecciona la fecha de imputación');
+        return;
+    }
+    
+    if (horasHoy <= 0) {
+        alert('Por favor ingresa las horas trabajadas');
+        return;
+    }
+    
+    if (isNaN(nuevoProgreso) || nuevoProgreso < 0 || nuevoProgreso > 100) {
+        alert('Por favor ingresa un porcentaje de progreso válido (0-100)');
+        return;
+    }
+    
+    if (!comentariosHoy) {
+        alert('Por favor describe el trabajo realizado');
+        return;
+    }
+    
+    // Actualizar la tarea
+    const tareaIndex = tareas.findIndex(t => t.id === tareaSeleccionadaId);
+    if (tareaIndex === -1) return;
+    
+    const tarea = tareas[tareaIndex];
+    
+    // Actualizar datos de la tarea
+    tarea.horasTrabajadas += horasHoy;
+    tarea.progreso = nuevoProgreso;
+    if (nuevoEstado) tarea.estado = nuevoEstado;
+    
+    // Si se completó la tarea y no tiene fecha fin, establecer hoy como fecha fin
+    if (tarea.estado === 'completado' && !tarea.fechaFin) {
+        tarea.fechaFin = fechaImputacion;
+    }
+    
+    // Crear registro diario - ahora usando el usuario que registra las horas
+    const registroDiario = {
+        id: Date.now(),
+        tareaId: tarea.id,
+        fecha: fechaImputacion,
+        responsable: tarea.responsable,  // Mantener el responsable original de la tarea
+        usuarioRegistra: usuarioRegistra, // Nuevo campo: quien registra las horas
+        proyecto: tarea.proyecto,
+        descripcionTarea: tarea.descripcion,
+        horasTrabajadas: horasHoy,
+        comentarios: comentariosHoy,
+        progreso: nuevoProgreso,
+        area: tarea.area
+    };
+    
+    registrosDiarios.push(registroDiario);
+    
+    // Guardar datos
+    guardarDatos();
+    
+    // Mostrar mensaje
+    alert(`✅ Tarea actualizada correctamente.
+Usuario: ${usuarioRegistra}
+Fecha: ${fechaImputacion}
+Horas añadidas: ${horasHoy}h
+Total horas: ${tarea.horasTrabajadas}h
+Progreso: ${nuevoProgreso}%`);
+    
+    // Mostrar alerta si se excedió en horas
+    if (tarea.horasTrabajadas > tarea.horasEstimadas) {
+        const exceso = tarea.horasTrabajadas - tarea.horasEstimadas;
+        alert(`⚠️ ALERTA: Esta tarea ha excedido las horas estimadas.
+Horas estimadas: ${tarea.horasEstimadas}h
+Horas trabajadas: ${tarea.horasTrabajadas}h
+Exceso: ${exceso.toFixed(1)}h`);
+    }
+    
+    // Limpiar formulario y refrescar vista
+    cancelarActualizacion();
+    filtrarTareasResponsable();
+}
+
+function cancelarActualizacion() {
+    tareaSeleccionadaId = null;
+}
+
+// ==================== FUNCIONES VISTA POR PERSONA ====================
+
+function inicializarDaily() {
+    // Cargar áreas en el filtro
+    const selectArea = document.getElementById('filtroAreaDaily');
+    selectArea.innerHTML = '<option value="">Todas las áreas</option>';
+    
+    ['desarrollo', 'sistemas', 'bbdd', 'bi'].forEach(area => {
+        selectArea.innerHTML += `<option value="${area}">${capitalizar(area)}</option>`;
+    });
+    
+    // Establecer la fecha de ayer como predeterminada
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    const fechaAyer = ayer.toISOString().split('T')[0];
+    document.getElementById('fechaDaily').value = fechaAyer;
+    
+    // Cargar automáticamente los registros de ayer
+    cargarDaily();
+}
+
+function cargarVistaPersona() {
+    const personaSeleccionada = document.getElementById('selectorPersona').value;
+    const periodo = document.getElementById('periodoPersona').value;
+    
+    if (!personaSeleccionada) {
+        alert('Por favor selecciona una persona');
+        return;
+    }
+
+    // Filtrar tareas de la persona
+    let tareasPersona = tareas.filter(t => t.responsable === personaSeleccionada);
+    
+    // Filtrar por período
+    if (periodo !== 'todos') {
+        const diasAtras = parseInt(periodo);
+        const fechaLimite = new Date();
+        fechaLimite.setDate(fechaLimite.getDate() - diasAtras);
+        tareasPersona = tareasPersona.filter(t => new Date(t.fechaCreacion) >= fechaLimite);
+    }
+
+    // Mostrar estadísticas
+    const totalTareas = tareasPersona.length;
+    const completadas = tareasPersona.filter(t => t.estado === 'completado').length;
+    const horasTotales = tareasPersona.reduce((sum, t) => sum + t.horasTrabajadas, 0);
+    const horasEstimadas = tareasPersona.reduce((sum, t) => sum + t.horasEstimadas, 0);
+    const eficiencia = horasEstimadas > 0 ? Math.round((horasEstimadas / horasTotales) * 100) : 0;
+
+    document.getElementById('tareasPersona').textContent = totalTareas;
+    document.getElementById('completadasPersona').textContent = completadas;
+    document.getElementById('horasPersona').textContent = horasTotales + 'h';
+    document.getElementById('eficienciaPersona').textContent = eficiencia + '%';
+
+    // Mostrar tabla detallada
+    const tbody = document.getElementById('tablaPersona');
+    tbody.innerHTML = '';
+
+    tareasPersona.forEach(tarea => {
+        const fila = document.createElement('tr');
+        const desviacion = tarea.horasTrabajadas - tarea.horasEstimadas;
+        const alertaTiempo = desviacion > (tarea.horasEstimadas * 0.2) ? '⚠️ Sobrecosto' : 
+                           desviacion < 0 ? '✅ En tiempo' : '➖ Normal';
+        
+        const fechaLimite = new Date(tarea.fechaFin);
+        const hoy = new Date();
+        const diasRestantes = Math.ceil((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
+        const alertaFecha = tarea.fechaFin && diasRestantes < 0 ? '🚨 Retrasada' :
+                          tarea.fechaFin && diasRestantes <= 2 ? '⚠️ Urgente' : '✅ A tiempo';
+
+        fila.innerHTML = `
+            <td>${tarea.proyecto}</td>
+            <td>${tarea.descripcion.substring(0, 40)}...</td>
+            <td><span class="status ${tarea.estado}">${capitalizar(tarea.estado)}</span></td>
+            <td>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${tarea.progreso}%"></div>
+                </div>
+                ${tarea.progreso}%
+            </td>
+            <td>${tarea.horasEstimadas}h</td>
+            <td>${tarea.horasTrabajadas}h</td>
+            <td style="color: ${desviacion > 0 ? '#dc3545' : '#28a745'}">${desviacion > 0 ? '+' : ''}${desviacion.toFixed(1)}h</td>
+            <td>${tarea.fechaFin || 'No definida'}</td>
+            <td>${alertaTiempo}<br>${alertaFecha}</td>
+        `;
+        tbody.appendChild(fila);
+    });
+
+    // Mostrar historial de actividad diaria
+    mostrarHistorialPersona(personaSeleccionada, periodo);
+
+    document.getElementById('contenidoPersona').style.display = 'block';
+    document.getElementById('tituloPersona').textContent = `📊 Seguimiento de ${personaSeleccionada}`;
+}
+
+function mostrarHistorialPersona(persona, periodo) {
+    const historialContainer = document.getElementById('historialPersona');
+    
+    let registrosPersona = registrosDiarios.filter(r => r.responsable === persona);
+    
+    // Filtrar por período
+    if (periodo !== 'todos') {
+        const diasAtras = parseInt(periodo);
+        const fechaLimite = new Date();
+        fechaLimite.setDate(fechaLimite.getDate() - diasAtras);
+        registrosPersona = registrosPersona.filter(r => new Date(r.fecha) >= fechaLimite);
+    }
+
+    historialContainer.innerHTML = '';
+
+    if (registrosPersona.length === 0) {
+        historialContainer.innerHTML = '<div class="alerta info">No hay registros de actividad para este período.</div>';
+        return;
+    }
+
+    // Agrupar por fecha
+    const porFecha = {};
+    registrosPersona.forEach(registro => {
+        if (!porFecha[registro.fecha]) {
+            porFecha[registro.fecha] = [];
+        }
+        porFecha[registro.fecha].push(registro);
+    });
+
+    // Ordenar fechas (más reciente primero)
+    const fechasOrdenadas = Object.keys(porFecha).sort((a, b) => new Date(b) - new Date(a));
+
+    fechasOrdenadas.forEach(fecha => {
+        const registrosFecha = porFecha[fecha];
+        const totalHorasDia = registrosFecha.reduce((sum, r) => sum + r.horasTrabajadas, 0);
+        
+        const fechaDiv = document.createElement('div');
+        fechaDiv.className = 'historial-dia';
+        
+        let contenido = `
+            <div class="fecha-historial">📅 ${fecha} - Total: ${totalHorasDia}h</div>
+        `;
+        
+        registrosFecha.forEach(registro => {
+            contenido += `
+                <div style="margin: 8px 0; padding: 8px; background: white; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>${registro.proyecto}</strong></span>
+                        <span class="area-tag ${registro.area}">${capitalizar(registro.area)}</span>
+                    </div>
+                    <div style="margin: 4px 0; font-size: 0.9em; color: #6c757d;">${registro.descripcionTarea}</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                        <span>⏰ ${registro.horasTrabajadas}h</span>
+                        <span>📊 ${registro.progreso}%</span>
+                    </div>
+                    ${registro.comentarios ? `<div style="margin-top: 6px; padding: 6px; background: #e9f7ef; border-radius: 4px; font-size: 0.85em; font-style: italic;">💬 ${registro.comentarios}</div>` : ''}
+                </div>
+            `;
+        });
+        
+        fechaDiv.innerHTML = contenido;
+        historialContainer.appendChild(fechaDiv);
+    });
+}
+
+// Funciones auxiliares
+function capitalizar(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).replace('-', ' ');
+}
+
+// Inicializar la aplicación
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar datos
+    inicializarDatos();
+    
+    // Establecer fecha de hoy como predeterminada
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaInicio').value = hoy;
+    document.getElementById('fechaDesde').value = hoy;
+    document.getElementById('fechaHasta').value = hoy;
+    
+    // Cargar datos si existen
+    mostrarTareas();
+    actualizarDashboard();
+});
+
+// ==================== FUNCIONES MAESTRO DE PROYECTOS ====================
+
+// Array para almacenar los proyectos
+let proyectos = [];
+let contadorIdProyecto = 1;
+
+// Inicializar datos de proyectos
+function inicializarProyectos() {
+    const proyectosGuardados = localStorage.getItem('proyectosIT');
+    const contadorProyectos = localStorage.getItem('contadorIdProyectos');
+    
+    if (proyectosGuardados) {
+        proyectos = JSON.parse(proyectosGuardados);
+    }
+    
+    if (contadorProyectos) {
+        contadorIdProyecto = parseInt(contadorProyectos);
+    }
+    
+    // Cargar la tabla de proyectos
+    cargarTablaProyectos();
+    
+    // Cargar selectores de proyectos en el formulario de tareas
+    cargarSelectoresProyectos();
+}
+
+// Guardar datos de proyectos
+function guardarProyectos() {
+    localStorage.setItem('proyectosIT', JSON.stringify(proyectos));
+    localStorage.setItem('contadorIdProyectos', contadorIdProyecto.toString());
+}
+
+// Agregar un nuevo proyecto
+function agregarProyecto() {
+    const nombre = document.getElementById('nombreProyecto').value;
+    const codigo = document.getElementById('codigoProyecto').value;
+    const descripcion = document.getElementById('descripcionProyecto').value;
+    const estado = document.getElementById('estadoProyecto').value;
+    
+    if (!nombre || !codigo) {
+        alert('Por favor, ingresa al menos el nombre y código del proyecto.');
+        return;
+    }
+    
+    // Verificar si ya existe un proyecto con el mismo código
+    if (proyectos.some(p => p.codigo === codigo)) {
+        alert('Ya existe un proyecto con este código. Por favor, utiliza otro código.');
+        return;
+    }
+    
+    const nuevoProyecto = {
+        id: contadorIdProyecto++,
+        nombre: nombre,
+        codigo: codigo,
+        descripcion: descripcion || '',
+        estado: estado,
+        fechaCreacion: new Date().toISOString().split('T')[0]
+    };
+    
+    proyectos.push(nuevoProyecto);
+    guardarProyectos();
+    
+    // Limpiar formulario
+    document.getElementById('nombreProyecto').value = '';
+    document.getElementById('codigoProyecto').value = '';
+    document.getElementById('descripcionProyecto').value = '';
+    document.getElementById('estadoProyecto').value = 'activo';
+    
+    // Actualizar tabla y selectores
+    cargarTablaProyectos();
+    cargarSelectoresProyectos();
+    
+    alert('✅ Proyecto guardado correctamente');
+}
+
+// Cargar la tabla de proyectos
+function cargarTablaProyectos() {
+    const tabla = document.getElementById('tablaProyectos').getElementsByTagName('tbody')[0];
+    tabla.innerHTML = '';
+    
+    proyectos.forEach(proyecto => {
+        const fila = tabla.insertRow();
+        
+        const celdaCodigo = fila.insertCell(0);
+        celdaCodigo.textContent = proyecto.codigo;
+        
+        const celdaNombre = fila.insertCell(1);
+        celdaNombre.textContent = proyecto.nombre;
+        
+        const celdaDescripcion = fila.insertCell(2);
+        celdaDescripcion.textContent = proyecto.descripcion;
+        
+        const celdaEstado = fila.insertCell(3);
+        celdaEstado.innerHTML = `<span class="status ${proyecto.estado}">${capitalizar(proyecto.estado)}</span>`;
+        
+        const celdaAcciones = fila.insertCell(4);
+        celdaAcciones.innerHTML = `
+            <button class="btn btn-sm" onclick="editarProyecto(${proyecto.id})">✏️</button>
+            <button class="btn btn-sm" onclick="eliminarProyecto(${proyecto.id})">❌</button>
+        `;
+    });
+}
+
+// Cargar selectores de proyectos
+function cargarSelectoresProyectos() {
+    // Cargar selector en el formulario de tareas
+    const selectorTareas = document.getElementById('proyecto');
+    const proyectosActivos = proyectos.filter(p => p.estado === 'activo');
+    
+    // Mantener la primera opción y limpiar el resto
+    selectorTareas.innerHTML = '<option value="">Seleccionar proyecto...</option>';
+    
+    proyectosActivos.forEach(proyecto => {
+        const option = document.createElement('option');
+        option.value = proyecto.nombre;  // Usamos el nombre para mantener compatibilidad con datos existentes
+        option.textContent = `${proyecto.codigo} - ${proyecto.nombre}`;
+        selectorTareas.appendChild(option);
+    });
+}
+
+// Editar proyecto
+function editarProyecto(id) {
+    alert('Funcionalidad de edición en desarrollo...');
+    // Implementación futura: mostrar un modal para editar el proyecto
+}
+
+// Eliminar proyecto
+function eliminarProyecto(id) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    const proyectoIndex = proyectos.findIndex(p => p.id === id);
+    if (proyectoIndex === -1) return;
+    
+    const proyecto = proyectos[proyectoIndex];
+    
+    // Verificar si hay tareas asociadas a este proyecto
+    const tareasAsociadas = tareas.filter(t => t.proyecto === proyecto.nombre);
+    if (tareasAsociadas.length > 0) {
+        alert(`No se puede eliminar este proyecto porque tiene ${tareasAsociadas.length} tareas asociadas.`);
+        return;
+    }
+    
+    // Eliminar el proyecto
+    proyectos.splice(proyectoIndex, 1);
+    guardarProyectos();
+    
+    // Actualizar vista
+    cargarTablaProyectos();
+    cargarSelectoresProyectos();
+    
+    alert('✅ Proyecto eliminado correctamente');
+}
+
+
+// ==================== FUNCIONES MAESTRO DE USUARIOS ====================
+
+// Array para almacenar los usuarios
+let usuarios = [];
+let contadorIdUsuario = 1;
+
+// Inicializar datos de usuarios
+function inicializarUsuarios() {
+    const usuariosGuardados = localStorage.getItem('usuariosIT');
+    const contadorUsuarios = localStorage.getItem('contadorIdUsuarios');
+    
+    if (usuariosGuardados) {
+        usuarios = JSON.parse(usuariosGuardados);
+    }
+    
+    if (contadorUsuarios) {
+        contadorIdUsuario = parseInt(contadorUsuarios);
+    }
+    
+    // Cargar la tabla de usuarios
+    cargarTablaUsuarios();
+    
+    // Cargar selectores de usuarios en el formulario de tareas
+    cargarSelectoresUsuarios();
+}
+
+// Guardar datos de usuarios
+function guardarUsuarios() {
+    localStorage.setItem('usuariosIT', JSON.stringify(usuarios));
+    localStorage.setItem('contadorIdUsuarios', contadorIdUsuario.toString());
+}
+
+// Agregar un nuevo usuario
+function agregarUsuario() {
+    const nombre = document.getElementById('nombreUsuario').value;
+    const area = document.getElementById('areaUsuario').value;
+    const email = document.getElementById('emailUsuario').value;
+    const cargo = document.getElementById('cargoUsuario').value;
+    
+    if (!nombre) {
+        alert('Por favor, ingresa al menos el nombre del usuario.');
+        return;
+    }
+    
+    const nuevoUsuario = {
+        id: contadorIdUsuario++,
+        nombre: nombre,
+        area: area,
+        email: email || '',
+        cargo: cargo || '',
+        fechaCreacion: new Date().toISOString().split('T')[0]
+    };
+    
+    usuarios.push(nuevoUsuario);
+    guardarUsuarios();
+    
+    // Limpiar formulario
+    document.getElementById('nombreUsuario').value = '';
+    document.getElementById('emailUsuario').value = '';
+    document.getElementById('cargoUsuario').value = '';
+    
+    // Actualizar tabla y selectores
+    cargarTablaUsuarios();
+    cargarSelectoresUsuarios();
+    
+    alert('✅ Usuario guardado correctamente');
+}
+
+// Cargar la tabla de usuarios
+function cargarTablaUsuarios() {
+    const tabla = document.getElementById('tablaUsuarios').getElementsByTagName('tbody')[0];
+    tabla.innerHTML = '';
+    
+    usuarios.forEach(usuario => {
+        const fila = tabla.insertRow();
+        
+        const celdaNombre = fila.insertCell(0);
+        celdaNombre.textContent = usuario.nombre;
+        
+        const celdaArea = fila.insertCell(1);
+        celdaArea.innerHTML = `<span class="area-tag ${usuario.area}">${capitalizar(usuario.area)}</span>`;
+        
+        const celdaEmail = fila.insertCell(2);
+        celdaEmail.textContent = usuario.email;
+        
+        const celdaCargo = fila.insertCell(3);
+        celdaCargo.textContent = usuario.cargo;
+        
+        const celdaAcciones = fila.insertCell(4);
+        celdaAcciones.innerHTML = `
+            <button class="btn btn-sm" onclick="editarUsuario(${usuario.id})">✏️</button>
+            <button class="btn btn-sm" onclick="eliminarUsuario(${usuario.id})">❌</button>
+        `;
+    });
+}
+
+// Cargar selectores de usuarios
+function cargarSelectoresUsuarios() {
+    // Cargar selector en el formulario de tareas
+    const selectorTareas = document.getElementById('responsable');
+    
+    // Mantener la primera opción y limpiar el resto
+    selectorTareas.innerHTML = '<option value="">Seleccionar responsable...</option>';
+    
+    usuarios.forEach(usuario => {
+        const option = document.createElement('option');
+        option.value = usuario.nombre;  // Usamos el nombre para mantener compatibilidad con datos existentes
+        option.textContent = usuario.nombre;
+        selectorTareas.appendChild(option);
+    });
+    
+    // También actualizar el selector en la tab de actualizar horas
+    const selectorResponsableFiltro = document.getElementById('responsableFiltro');
+    if (selectorResponsableFiltro) {
+        selectorResponsableFiltro.innerHTML = '<option value="">Seleccionar responsable...</option>';
+        usuarios.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.nombre;
+            option.textContent = usuario.nombre;
+            selectorResponsableFiltro.appendChild(option);
+        });
+    }
+    
+    // Y el selector de usuario que registra horas
+    const selectorUsuarioRegistra = document.getElementById('usuarioRegistra');
+    if (selectorUsuarioRegistra) {
+        selectorUsuarioRegistra.innerHTML = '<option value="">Seleccionar usuario...</option>';
+        usuarios.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.nombre;
+            option.textContent = usuario.nombre;
+            selectorUsuarioRegistra.appendChild(option);
+        });
+    }
+}
+
+// Editar usuario
+function editarUsuario(id) {
+    alert('Funcionalidad de edición en desarrollo...');
+    // Implementación futura: mostrar un modal para editar el usuario
+}
+
+// Eliminar usuario
+function eliminarUsuario(id) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    const usuarioIndex = usuarios.findIndex(u => u.id === id);
+    if (usuarioIndex === -1) return;
+    
+    const usuario = usuarios[usuarioIndex];
+    
+    // Verificar si hay tareas asignadas a este usuario
+    const tareasAsignadas = tareas.filter(t => t.responsable === usuario.nombre);
+    if (tareasAsignadas.length > 0) {
+        alert(`No se puede eliminar este usuario porque tiene ${tareasAsignadas.length} tareas asignadas.`);
+        return;
+    }
+    
+    // Eliminar el usuario
+    usuarios.splice(usuarioIndex, 1);
+    guardarUsuarios();
+    
+    // Actualizar vista
+    cargarTablaUsuarios();
+    cargarSelectoresUsuarios();
+    
+    alert('✅ Usuario eliminado correctamente');
+}
+
+// Inicializar la aplicación
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar datos
+    inicializarDatos();
+    inicializarProyectos();
+    inicializarUsuarios();
+    
+    // Establecer fecha de hoy como predeterminada
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaDaily').value = hoy;
+    document.getElementById('filtroAreaDaily').value = '';
+    
+    // Inicializar todas las vistas
+    inicializarDaily();
+    inicializarActualizarHoras();
+    inicializarVistaPersonas();
+    
+    // Mostrar tareas y actualizar dashboard
+    mostrarTareas();
+    actualizarDashboard();
+});
+</script>
+</body>
+</html>
