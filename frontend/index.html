@@ -2492,32 +2492,59 @@ function editarProyecto(id) {
 }
 
 // Eliminar proyecto
-function eliminarProyecto(id) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.')) {
-        return;
+async function eliminarProyecto(id) {
+    try {
+        if (!confirm('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.')) {
+            return;
+        }
+        
+        // Buscar el proyecto en el array local
+        const proyectoIndex = proyectos.findIndex(p => p.id === id);
+        if (proyectoIndex === -1) {
+            alert('Proyecto no encontrado.');
+            return;
+        }
+        
+        const proyecto = proyectos[proyectoIndex];
+        
+        // Verificar si hay tareas asociadas a este proyecto
+        // Primero obtenemos todas las tareas actualizadas
+        const todasLasTareas = await ApiClient.getTasks();
+        const nombreProyecto = proyecto.name || proyecto.nombre; // Compatibilidad con ambos formatos
+        
+        const tareasAsociadas = todasLasTareas.filter(t => {
+            const proyectoTarea = t.proyecto || t.project;
+            return proyectoTarea === nombreProyecto;
+        });
+        
+        if (tareasAsociadas.length > 0) {
+            alert(`No se puede eliminar este proyecto porque tiene ${tareasAsociadas.length} tareas asociadas.`);
+            return;
+        }
+        
+        console.log(`Eliminando proyecto con ID: ${id}`);
+        
+        // Llamar a la API para eliminar el proyecto
+        const resultado = await ApiClient.deleteProject(id);
+        
+        if (resultado && resultado.message === 'success') {
+            console.log('Proyecto eliminado correctamente en la API');
+            
+            // Actualizar el array local solo después de éxito en la API
+            proyectos = proyectos.filter(p => p.id !== id);
+            
+            // Actualizar vista
+            cargarTablaProyectos();
+            cargarSelectoresProyectos();
+            
+            alert('✅ Proyecto eliminado correctamente');
+        } else {
+            throw new Error('No se pudo eliminar el proyecto en la API. ' + (resultado?.message || ''));
+        }
+    } catch (error) {
+        console.error('Error al eliminar proyecto:', error);
+        alert('❌ Error al eliminar el proyecto: ' + error.message);
     }
-    
-    const proyectoIndex = proyectos.findIndex(p => p.id === id);
-    if (proyectoIndex === -1) return;
-    
-    const proyecto = proyectos[proyectoIndex];
-    
-    // Verificar si hay tareas asociadas a este proyecto
-    const tareasAsociadas = tareas.filter(t => t.proyecto === proyecto.nombre);
-    if (tareasAsociadas.length > 0) {
-        alert(`No se puede eliminar este proyecto porque tiene ${tareasAsociadas.length} tareas asociadas.`);
-        return;
-    }
-    
-    // Eliminar el proyecto
-    proyectos.splice(proyectoIndex, 1);
-    guardarProyectos();
-    
-    // Actualizar vista
-    cargarTablaProyectos();
-    cargarSelectoresProyectos();
-    
-    alert('✅ Proyecto eliminado correctamente');
 }
 
 

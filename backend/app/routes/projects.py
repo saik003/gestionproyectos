@@ -60,4 +60,4 @@ def delete_project(project_id):
     project = Project.query.get_or_404(project_id)
     db.session.delete(project)
     db.session.commit()
-    return jsonify({'message': 'Proyecto eliminado correctamente'}), 200
+    return jsonify({'message': 'success'}), 200
