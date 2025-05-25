@@ -1097,7 +1097,6 @@ function editarTarea(id) {
 
 // Mostrar formulario para imputar horas
 function mostrarImputarHoras(id) {
-    debugger;
     tareaSeleccionadaDirecta = id;
     const tarea = tareas.find(t => t.id === id);
     if (!tarea) return;
@@ -1344,7 +1343,7 @@ async function imputarHorasTarea() {
 }
 
 // Mostrar historial de horas de una tarea
-function mostrarHistorialHorasTarea(id) {
+async function mostrarHistorialHorasTarea(id) {
     tareaSeleccionadaDirecta = id;
     const tarea = tareas.find(t => t.id === id);
     if (!tarea) return;
@@ -1354,10 +1353,10 @@ function mostrarHistorialHorasTarea(id) {
     document.getElementById('historialHorasTarea').style.display = 'block';
     
     // Titulo con datos de la tarea
-    document.getElementById('tituloHistorialHoras').textContent = `📅 Historial: ${tarea.proyecto} - ${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}`;
+    document.getElementById('tituloHistorialHoras').textContent = `📅 Historial: ${tarea.project_name} - ${tarea.title.substring(0, 30)}${tarea.title.length > 30 ? '...' : ''}`;
     
-    // Obtener registros de esta tarea
-    const registrosTarea = registrosDiarios.filter(r => r.tareaId === id);
+    // Obtener registros de esta tarea del api
+    const registrosTarea = await ApiClient.getDailyRecords();
     
     // Ordenar por fecha (más reciente primero)
     registrosTarea.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -1376,15 +1375,20 @@ function mostrarHistorialHorasTarea(id) {
         const fila = tabla.insertRow();
         
         // Formatear fecha a formato local
-        const fecha = new Date(registro.fecha);
+        const fecha = new Date(registro.date);
         const fechaFormateada = fecha.toLocaleDateString();
-        
+        //Calulamos el progreso
+        const totalHoras = tarea.completed_hours || 0;
+        let progreso = 0;
+        if (tarea.estimated_hours > 0) {
+            progreso = Math.min(100, Math.round((totalHoras / tarea.estimated_hours) * 100));
+        }
         fila.innerHTML = `
             <td>${fechaFormateada}</td>
-            <td>${registro.usuarioRegistra || registro.responsable}</td>
-            <td>${registro.horasTrabajadas}h</td>
-            <td>${registro.progreso}%</td>
-            <td>${registro.comentarios}</td>
+            <td>${registro.user_name}</td>
+            <td>${registro.hours}h</td>
+            <td>${progreso}%</td>
+            <td>${registro.comments}</td>
         `;
     });
 }
