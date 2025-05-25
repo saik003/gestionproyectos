@@ -987,7 +987,6 @@ function showTab(tabName) {
 }
 
 async function agregarTarea() {
-    debugger;
     try {
         // Obtener valores del formulario
         const area = document.getElementById('area')?.value || '';
@@ -1098,6 +1097,7 @@ function editarTarea(id) {
 
 // Mostrar formulario para imputar horas
 function mostrarImputarHoras(id) {
+    debugger;
     tareaSeleccionadaDirecta = id;
     const tarea = tareas.find(t => t.id === id);
     if (!tarea) return;
@@ -1107,7 +1107,7 @@ function mostrarImputarHoras(id) {
     document.getElementById('historialHorasTarea').style.display = 'none';
     
     // Titulo con datos de la tarea
-    document.getElementById('tituloImputarHoras').textContent = `⏱️ Imputar Horas: ${tarea.proyecto} - ${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}`;
+    document.getElementById('tituloImputarHoras').textContent = `⏱️ Imputar Horas: ${tarea.project_name} - ${tarea.title.substring(0, 30)}${tarea.title.length > 30 ? '...' : ''}`;
     
     // Establecer fecha actual como predeterminada
     const hoy = new Date().toISOString().split('T')[0];
@@ -1123,33 +1123,26 @@ function mostrarImputarHoras(id) {
 }
 
 // Cargar usuarios en el selector de imputación
-function cargarSelectoresUsuariosImputacion() {
+async function cargarSelectoresUsuariosImputacion() {
     const selectorUsuarios = document.getElementById('usuarioImputacion');
     if (selectorUsuarios) {
-        // Obtener usuarios del maestro de usuarios (mismo enfoque que en vista por persona)
-        const usuariosMaestro = JSON.parse(localStorage.getItem('usuariosIT') || '[]');
-        
+        //obtenemos los usuarios del api
+        const usuarios = await ApiClient.getUsers();
         selectorUsuarios.innerHTML = '<option value="">Seleccionar usuario...</option>';
-        
-        if (usuariosMaestro.length > 0) {
+        if (usuarios.length > 0) {
             // Ordenar alfabéticamente por nombre
-            usuariosMaestro.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            usuarios.sort((a, b) => a.name.localeCompare(b.name));
             
             // Añadir al selector
-            usuariosMaestro.forEach(usuario => {
+            usuarios.forEach(usuario => {
                 const option = document.createElement('option');
-                option.value = usuario.nombre;
-                option.textContent = usuario.nombre;
+                option.value = usuario.id;
+                option.textContent = usuario.name;
                 selectorUsuarios.appendChild(option);
             });
         } else {
-            // Si no hay usuarios en el maestro, usar el array global como respaldo
-            usuarios.forEach(usuario => {
-                const option = document.createElement('option');
-                option.value = usuario.nombre;
-                option.textContent = usuario.nombre;
-                selectorUsuarios.appendChild(option);
-            });
+          // SI no hay usuario mostramos log de error
+          console.error('No se encontraron usuarios');
         }
     }
 }
@@ -1252,7 +1245,6 @@ function agregarTarea() {
         alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
         return;
     }
-    debugger;
     
     tareas.push(nuevaTarea);
     guardarDatos();
@@ -1447,7 +1439,6 @@ async function mostrarTareas() {
     const tablaTareas = document.getElementById('tablaTareas');
     if (tablaTareas) {
         tablaTareas.innerHTML = '';
-        debugger;
         if (tareasFiltradas.length === 0) {
             const fila = tablaTareas.insertRow();
             fila.innerHTML = '<td colspan="10" class="text-center">No hay tareas registradas</td>';
@@ -1842,7 +1833,6 @@ function inicializarActualizarHoras() {
         const selectResponsable = document.getElementById('responsableFiltro');
         
         if (selectResponsable) {
-            debugger;
             selectResponsable.innerHTML = '<option value="">Seleccionar responsable...</option>';
             responsables.forEach(responsable => {
                 const option = document.createElement('option');
@@ -2581,7 +2571,6 @@ async function agregarUsuario() {
             contadorIdUsuario = Math.max(contadorIdUsuario, resultado.id + 1);
             
             // Recargar usuarios desde la API
-            debugger;
             usuarios = await ApiClient.getUsers();
             
             // Limpiar formulario
