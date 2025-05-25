@@ -28,6 +28,7 @@ def create_task():
         title=data.get('title'),
         description=data.get('description'),
         start_date=start_date,
+        area=data.get('area'),
         end_date=end_date,
         estimated_hours=data.get('estimated_hours'),
         project_id=data.get('project_id'),
@@ -63,6 +64,8 @@ def update_task(task_id):
         task.project_id = data['project_id']
     if 'assigned_to' in data:
         task.assigned_to = data['assigned_to']
+    if 'area' in data:
+        task.area = data['area']
     
     db.session.commit()
     return jsonify(task.to_dict())

@@ -834,7 +834,6 @@ async function guardarDatos() {
         console.log('Llamada genérica a guardarDatos() - actualizando vista');
         
         // Recargar datos desde la API para asegurar sincronización
-        tareas = await ApiClient.getTasks();
         registrosDiarios = await ApiClient.getDailyRecords();
         
         // Actualizar la interfaz
@@ -851,14 +850,6 @@ async function guardarDatos() {
 // Función directa para guardar tareas sin pasar por guardarDatos
 async function guardarTareaDirecto() {
     console.log('guardarTareaDirecto() - Guardando tarea directamente');
-    
-    // Evitar llamadas recursivas
-    if (guardandoTarea) {
-        console.log('Ya se está procesando una solicitud de guardar tarea');
-        return;
-    }
-    
-    guardandoTarea = true;
     
     try {
         // Obtener valores del formulario
@@ -924,11 +915,6 @@ async function guardarTareaDirecto() {
         }
         
         console.log('Resultado de la operación:', resultado);
-        
-        // Recargar tareas desde la API
-        console.log('Recargando lista de tareas...');
-        tareas = await ApiClient.getTasks();
-        console.log('Tareas recargadas:', tareas.length, 'tareas');
         
         // Limpiar y actualizar
         tareaEnEdicion = null;
@@ -1000,19 +986,8 @@ function showTab(tabName) {
     }
 }
 
-// Función para agregar tarea
-// Variable para evitar bucle infinito
-let guardandoTarea = false;
-
 async function agregarTarea() {
-    // Evitar llamadas recursivas
-    if (guardandoTarea) {
-        console.log('Ya se está procesando una solicitud de guardar tarea');
-        return;
-    }
-    
-    guardandoTarea = true;
-    
+    debugger;
     try {
         // Obtener valores del formulario
         const area = document.getElementById('area')?.value || '';
@@ -1077,11 +1052,6 @@ async function agregarTarea() {
         }
         
         console.log('Resultado de la operación:', resultado);
-        
-        // Recargar tareas desde la API
-        console.log('Recargando lista de tareas...');
-        tareas = await ApiClient.getTasks();
-        console.log('Tareas recargadas:', tareas);
         
         // Limpiar y actualizar
         tareaEnEdicion = null;
@@ -1282,6 +1252,7 @@ function agregarTarea() {
         alert('Por favor, completa los campos obligatorios: Responsable, Proyecto y Descripción');
         return;
     }
+    debugger;
     
     tareas.push(nuevaTarea);
     guardarDatos();
@@ -1438,9 +1409,6 @@ async function cambiarEstadoTarea(id, estado) {
         // Llamar a la API para actualizar el estado de la tarea
         await ApiClient.updateTaskStatus(id, estado === 'activa' ? 'active' : 'inactive');
             
-        // Recargar las tareas desde la API
-        tareas = await ApiClient.getTasks();
-            
         // Actualizar la interfaz
         mostrarTareas();
         actualizarDashboard();
@@ -1453,7 +1421,10 @@ async function cambiarEstadoTarea(id, estado) {
 
 // ==================== FUNCIONES PARA LAS TAREAS ====================
 // Función para mostrar tareas en la tabla
-function mostrarTareas() {
+async function mostrarTareas() {
+    // Recargar las tareas desde la API
+    tareas = await ApiClient.getTasks();
+
     // Comprobar si queremos mostrar tareas inactivas
     const mostrarInactivas = document.getElementById('mostrarInactivas').checked;
     
@@ -1476,7 +1447,7 @@ function mostrarTareas() {
     const tablaTareas = document.getElementById('tablaTareas');
     if (tablaTareas) {
         tablaTareas.innerHTML = '';
-        
+        debugger;
         if (tareasFiltradas.length === 0) {
             const fila = tablaTareas.insertRow();
             fila.innerHTML = '<td colspan="10" class="text-center">No hay tareas registradas</td>';
@@ -1485,46 +1456,52 @@ function mostrarTareas() {
                 const fila = tablaTareas.insertRow();
                 
                 // Calcular desviación en horas
-                const desviacionHoras = tarea.horasTrabajadas - tarea.horasEstimadas;
+                const desviacionHoras = tarea.estimated_hours - tarea.completed_hours;
                 
                 // Determinar clase CSS según estado
                 let filaClase = '';
-                if (tarea.estado === 'inactivo') filaClase = 'fila-inactiva';
-                else if (tarea.estado === 'completado') filaClase = 'fila-completada';
-                else if (tarea.estado === 'bloqueado') filaClase = 'fila-bloqueada';
+                if (tarea.status === 'inactive') filaClase = 'fila-inactiva';
+                else if (tarea.status === 'completed') filaClase = 'fila-completada';
+                else if (tarea.status === 'blocked') filaClase = 'fila-bloqueada';
                 
                 // Verificar si está retrasada según fecha fin
                 const hoy = new Date().toISOString().split('T')[0];
                 let retrasada = false;
-                if (tarea.fechaFin && tarea.fechaFin < hoy && tarea.estado !== 'completado' && tarea.estado !== 'inactivo') {
+                if (tarea.end_date && tarea.end_date < hoy && tarea.status !== 'completed' && tarea.status !== 'inactive') {
                     retrasada = true;
                     filaClase += ' fila-retrasada';
                 }
-                
+                //Calculamos el progreso
+                //Si no hay horas estimadas, el progreso es 0
+                let progreso = 0;
+                if (tarea.estimated_hours > 0) {
+                    progreso = (tarea.completed_hours / tarea.estimated_hours) * 100;
+                }
+                tarea.progreso = progreso;
                 fila.className = filaClase;
                 
                 fila.innerHTML = `
                     <td>${tarea.id}</td>
-                    <td>${tarea.area ? `<span class="area-tag ${tarea.area}">${capitalizar(tarea.area)}</span>` : ''}</td>
-                    <td>${tarea.proyecto}</td>
-                    <td>${tarea.descripcion.substring(0, 30)}${tarea.descripcion.length > 30 ? '...' : ''}</td>
-                    <td>${tarea.responsable}</td>
-                    <td><span class="status ${tarea.estado}">${capitalizar(tarea.estado)}</span></td>
+                    <td>${capitalizar(tarea.area)}</td>
+                    <td>${tarea.project_name}</td>
+                    <td>${tarea.description.substring(0, 30)}${tarea.description.length > 30 ? '...' : ''}</td>
+                    <td>${tarea.assignee_name}</td>
+                    <td><span class="status ${tarea.status}">${capitalizar(tarea.status)}</span></td>
                     <td>
                         <div class="progress-bar">
                             <div class="progress" style="width: ${tarea.progreso}%"></div>
                         </div>
                         ${tarea.progreso}%
                     </td>
-                    <td>${tarea.horasEstimadas}h</td>
-                    <td>${tarea.horasTrabajadas}h</td>
+                    <td>${tarea.estimated_hours}h</td>
+                    <td>${tarea.completed_hours}h</td>
                     <td>
                         <button class="btn btn-sm" onclick="mostrarImputarHoras(${tarea.id})" title="Imputar horas">⏱️</button>
                         <button class="btn btn-sm" onclick="mostrarHistorialHorasTarea(${tarea.id})" title="Ver historial">📊</button>
                         <button class="btn btn-sm" onclick="editarTarea(${tarea.id})" title="Editar tarea">✏️</button>
-                        ${tarea.estado !== 'inactivo' ? 
-                          `<button class="btn btn-sm" onclick="cambiarEstadoTarea(${tarea.id}, 'inactivo')" title="Marcar como inactiva">🚫</button>` :
-                          `<button class="btn btn-sm" onclick="cambiarEstadoTarea(${tarea.id}, 'pendiente')" title="Reactivar tarea">↩️</button>`
+                        ${tarea.status !== 'inactive' ? 
+                          `<button class="btn btn-sm" onclick="cambiarEstadoTarea(${tarea.id}, 'inactive')" title="Marcar como inactiva">🚫</button>` :
+                          `<button class="btn btn-sm" onclick="cambiarEstadoTarea(${tarea.id}, 'pending')" title="Reactivar tarea">↩️</button>`
                         }
                     </td>
                 `;
