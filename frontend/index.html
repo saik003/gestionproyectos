@@ -943,21 +943,7 @@ async function guardarTareaDirecto() {
     }
 }
 
-// Inicializar la aplicación
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar datos
-    inicializarDatos();
-    
-    // Establecer fecha de hoy como predeterminada
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaInicio').value = hoy;
-    document.getElementById('fechaDesde').value = hoy;
-    document.getElementById('fechaHasta').value = hoy;
-    
-    // Cargar datos si existen
-    mostrarTareas();
-    actualizarDashboard();
-});
+
 // Datos globales
 let tareas = [];
 let contadorId = 1;
@@ -1879,6 +1865,7 @@ function inicializarActualizarHoras() {
         const selectResponsable = document.getElementById('responsableFiltro');
         
         if (selectResponsable) {
+            debugger;
             selectResponsable.innerHTML = '<option value="">Seleccionar responsable...</option>';
             responsables.forEach(responsable => {
                 const option = document.createElement('option');
@@ -2315,21 +2302,7 @@ function capitalizar(str) {
     return str.charAt(0).toUpperCase() + str.slice(1).replace('-', ' ');
 }
 
-// Inicializar la aplicación
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar datos
-    inicializarDatos();
-    
-    // Establecer fecha de hoy como predeterminada
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaInicio').value = hoy;
-    document.getElementById('fechaDesde').value = hoy;
-    document.getElementById('fechaHasta').value = hoy;
-    
-    // Cargar datos si existen
-    mostrarTareas();
-    actualizarDashboard();
-});
+
 
 // ==================== FUNCIONES MAESTRO DE PROYECTOS ====================
 
@@ -2469,18 +2442,21 @@ function cargarTablaProyectos() {
 }
 
 // Cargar selectores de proyectos
-function cargarSelectoresProyectos() {
+async function cargarSelectoresProyectos() {
     // Cargar selector en el formulario de tareas
     const selectorTareas = document.getElementById('proyecto');
-    const proyectosActivos = proyectos.filter(p => p.estado === 'activo');
+    //obtenemos del api los proyectos
+    const proyectos = await ApiClient.getProjects();
+
+    const proyectosActivos = proyectos.filter(p => p.active === true);
     
     // Mantener la primera opción y limpiar el resto
     selectorTareas.innerHTML = '<option value="">Seleccionar proyecto...</option>';
     
     proyectosActivos.forEach(proyecto => {
         const option = document.createElement('option');
-        option.value = proyecto.nombre;  // Usamos el nombre para mantener compatibilidad con datos existentes
-        option.textContent = `${proyecto.codigo} - ${proyecto.nombre}`;
+        option.value = proyecto.id;  // Usamos el nombre para mantener compatibilidad con datos existentes
+        option.textContent = `${proyecto.name}`;
         selectorTareas.appendChild(option);
     });
 }
@@ -2685,14 +2661,13 @@ function cargarTablaUsuarios() {
 function cargarSelectoresUsuarios() {
     // Cargar selector en el formulario de tareas
     const selectorTareas = document.getElementById('responsable');
-    
     // Mantener la primera opción y limpiar el resto
     selectorTareas.innerHTML = '<option value="">Seleccionar responsable...</option>';
     
     usuarios.forEach(usuario => {
         const option = document.createElement('option');
-        option.value = usuario.nombre;  // Usamos el nombre para mantener compatibilidad con datos existentes
-        option.textContent = usuario.nombre;
+        option.value = usuario.id;  // Usamos el nombre para mantener compatibilidad con datos existentes
+        option.textContent = usuario.name;
         selectorTareas.appendChild(option);
     });
     
@@ -2702,8 +2677,8 @@ function cargarSelectoresUsuarios() {
         selectorResponsableFiltro.innerHTML = '<option value="">Seleccionar responsable...</option>';
         usuarios.forEach(usuario => {
             const option = document.createElement('option');
-            option.value = usuario.nombre;
-            option.textContent = usuario.nombre;
+            option.value = usuario.id;
+            option.textContent = usuario.name;
             selectorResponsableFiltro.appendChild(option);
         });
     }
@@ -2714,8 +2689,8 @@ function cargarSelectoresUsuarios() {
         selectorUsuarioRegistra.innerHTML = '<option value="">Seleccionar usuario...</option>';
         usuarios.forEach(usuario => {
             const option = document.createElement('option');
-            option.value = usuario.nombre;
-            option.textContent = usuario.nombre;
+            option.value = usuario.id;
+            option.textContent = usuario.name;
             selectorUsuarioRegistra.appendChild(option);
         });
     }
@@ -2807,6 +2782,23 @@ document.addEventListener('DOMContentLoaded', function() {
     mostrarTareas();
     actualizarDashboard();
 });
+
+// // Inicializar la aplicación
+// document.addEventListener('DOMContentLoaded', function() {
+//     // Inicializar datos
+//     inicializarDatos();
+    
+//     // Establecer fecha de hoy como predeterminada
+//     const hoy = new Date().toISOString().split('T')[0];
+//     document.getElementById('fechaInicio').value = hoy;
+//     document.getElementById('fechaDesde').value = hoy;
+//     document.getElementById('fechaHasta').value = hoy;
+    
+//     // Cargar datos si existen
+//     mostrarTareas();
+//     actualizarDashboard();
+// });
+
 </script>
 </body>
 </html>
