@@ -242,6 +242,7 @@ const ApiClient = {
     // Registros Diarios
     async getDailyRecords() {
         try {
+            debugger;
             const response = await fetch(`${API_URL}/daily-records/`);
             if (!response.ok) throw new Error('Error al obtener registros diarios');
             return await response.json();

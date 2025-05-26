@@ -39,7 +39,9 @@ body {
     margin-bottom: 10px;
     font-weight: 300;
 }
-
+.mt-2 {
+    margin-top: 10px;
+}
 .header p {
     opacity: 0.9;
     font-size: 1.1em;
@@ -321,7 +323,7 @@ tr:hover {
 <body>
 <div class="container">
     <div class="header">
-        <h1>🚀 Sistema de Seguimiento IT GESTAGUA</h1>
+        <h1>🚀 Sistema de Seguimiento IT</h1>
         <p>Control completo de tareas, horas y progreso de tu equipo</p>
     </div>
 
@@ -408,11 +410,11 @@ tr:hover {
                 <div class="form-group">
                     <label>Estado</label>
                     <select id="estado">
-                        <option value="pendiente">Pendiente</option>
-                        <option value="en_progreso">En Progreso</option>
-                        <option value="bloqueado">Bloqueado</option>
-                        <option value="completado">Completado</option>
-                        <option value="inactivo">Inactivo</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="in_progress">En Progreso</option>
+                        <option value="blocked">Bloqueado</option>
+                        <option value="completed">Completado</option>
+                        <option value="inactive">Inactivo</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -488,8 +490,9 @@ tr:hover {
                     </tbody>
                 </table>
             </div>
+            <!-- Agregamos margin top al boton -->
             <div class="form-actions">
-                <button onclick="cerrarHistorialHoras()" class="btn">❌ Cerrar</button>
+                <button onclick="cerrarHistorialHoras()" class="btn mt-2">❌ Cerrar</button>
             </div>
         </div>
     </div>
@@ -803,14 +806,6 @@ let operacionGuardadoEnProgreso = false;
 async function guardarDatos() {
     console.log('Guardando datos a través de la API...');
     
-    // Evitar bucles infinitos y llamadas múltiples
-    if (operacionGuardadoEnProgreso) {
-        console.log('Ya hay una operación de guardado en progreso, ignorando esta llamada');
-        return;
-    }
-    
-    operacionGuardadoEnProgreso = true;
-    
     try {
         // Si es un click directo en el botón de guardar tarea, usar el manejador directo
         // que no vuelve a llamar a guardarDatos
@@ -884,6 +879,8 @@ async function guardarTareaDirecto() {
             status: estado === 'activa' ? 'active' : 'inactive',
             project_id: parseInt(proyecto),
             assigned_to: parseInt(responsable),
+            priority: prioridad,
+            area: area,
             created_by: 1 // Asumimos usuario actual por defecto
         };
         
@@ -1072,7 +1069,13 @@ function cancelarFormularioTarea() {
 }
 
 // Editar una tarea existente
-function editarTarea(id) {
+async function editarTarea(id) {
+
+    //obtenemos los datos de los proyectos y de los usuarios del api
+    // Cargar usuarios y proyectos en los selectores
+    await cargarSelectoresUsuarios();
+    await cargarSelectoresProyectos();
+    
     tareaEnEdicion = id;
     const tarea = tareas.find(t => t.id === id);
     if (!tarea) return;
@@ -1081,18 +1084,18 @@ function editarTarea(id) {
     document.getElementById('formularioImputarHoras').style.display = 'none';
     document.getElementById('historialHorasTarea').style.display = 'none';
     
-    document.getElementById('tituloFormularioTarea').textContent = `✏️ Editar Tarea: ${tarea.proyecto}`;
-    
+    document.getElementById('tituloFormularioTarea').textContent = `✏️ Editar Tarea: ${tarea.project_name}`;
+    debugger;
     // Llenar formulario con datos de la tarea
     document.getElementById('area').value = tarea.area;
-    document.getElementById('responsable').value = tarea.responsable;
-    document.getElementById('proyecto').value = tarea.proyecto;
-    document.getElementById('prioridad').value = tarea.prioridad;
-    document.getElementById('estado').value = tarea.estado;
-    document.getElementById('descripcion').value = tarea.descripcion;
-    document.getElementById('fechaInicio').value = tarea.fechaInicio || '';
-    document.getElementById('fechaFin').value = tarea.fechaFin || '';
-    document.getElementById('horasEstimadas').value = tarea.horasEstimadas;
+    document.getElementById('responsable').value = tarea.created_by;
+    document.getElementById('proyecto').value = tarea.project_id;
+    document.getElementById('prioridad').value = tarea.priority;
+    document.getElementById('estado').value = tarea.status;
+    document.getElementById('descripcion').value = tarea.description;
+    document.getElementById('fechaInicio').value = tarea.start_date || '';
+    document.getElementById('fechaFin').value = tarea.end_date || '';
+    document.getElementById('horasEstimadas').value = tarea.estimated_hours;
 }
 
 // Mostrar formulario para imputar horas
@@ -1355,8 +1358,9 @@ async function mostrarHistorialHorasTarea(id) {
     // Titulo con datos de la tarea
     document.getElementById('tituloHistorialHoras').textContent = `📅 Historial: ${tarea.project_name} - ${tarea.title.substring(0, 30)}${tarea.title.length > 30 ? '...' : ''}`;
     
+    
     // Obtener registros de esta tarea del api
-    const registrosTarea = await ApiClient.getDailyRecords();
+    const registrosTarea = await ApiClient.getDailyRecordsByTask(id);
     
     // Ordenar por fecha (más reciente primero)
     registrosTarea.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));

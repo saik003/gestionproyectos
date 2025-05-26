@@ -9,6 +9,7 @@ class Task(db.Model):
     description = db.Column(db.Text)
     start_date = db.Column(db.Date, nullable=False)
     area = db.Column(db.String(150))
+    priority = db.Column(db.String(20))
     end_date = db.Column(db.Date)
     estimated_hours = db.Column(db.Float)
     completed_hours = db.Column(db.Float, default=0)
@@ -41,7 +42,8 @@ class Task(db.Model):
             'project_name': self.project.name if self.project else None,
             'assignee_name': self.assignee.name if self.assignee else None,
             'creator_name': self.creator.name if self.creator else None,
-            'area': self.area
+            'area': self.area,
+            'priority': self.priority
         }
 
 class User(db.Model):
