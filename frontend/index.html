@@ -361,6 +361,7 @@ tr:hover {
                         <th>Responsable</th>
                         <th>Estado</th>
                         <th>Progreso</th>
+                        <th>Prioridad</th>
                         <th>Horas Est.</th>
                         <th>Horas Trab.</th>
                         <th>Acciones</th>
@@ -403,7 +404,6 @@ tr:hover {
                     <label>Prioridad</label>
                     <select id="prioridad">
                         <option value="alta">Alta</option>
-                        <option value="media" selected>Media</option>
                         <option value="baja">Baja</option>
                     </select>
                 </div>
@@ -1428,16 +1428,17 @@ async function mostrarTareas() {
     // Comprobar si queremos mostrar tareas inactivas
     const mostrarInactivas = document.getElementById('mostrarInactivas').checked;
     
+    debugger;
     // Filtrar tareas según el checkbox
-    let tareasFiltradas = mostrarInactivas ? tareas : tareas.filter(t => t.estado !== 'inactivo');
+    let tareasFiltradas = mostrarInactivas ? tareas : tareas.filter(t => t.status !== 'inactive');
     
     // Ordenar tareas: primero activas (no completadas), luego completadas, finalmente inactivas
     tareasFiltradas.sort((a, b) => {
         // Primero por estado
-        if (a.estado === 'inactivo' && b.estado !== 'inactivo') return 1;
-        if (a.estado !== 'inactivo' && b.estado === 'inactivo') return -1;
-        if (a.estado === 'completado' && b.estado !== 'completado') return 1;
-        if (a.estado !== 'completado' && b.estado === 'completado') return -1;
+        if (a.status === 'inactive' && b.status !== 'inactive') return 1;
+        if (a.status !== 'inactive' && b.status === 'inactive') return -1;
+        if (a.status === 'completed' && b.status !== 'completed') return 1;
+        if (a.status !== 'completed' && b.status === 'completed') return -1;
         
         // Luego por fecha de creación (más recientes primero)
         return new Date(b.fechaCreacion) - new Date(a.fechaCreacion);
@@ -1478,7 +1479,14 @@ async function mostrarTareas() {
                 }
                 tarea.progreso = progreso;
                 fila.className = filaClase;
-                
+                //Para la prioridad mostrar flecha verdad para arriba o roja para abajo si es alta o baja
+                let prioridadIcono = '';
+                if (tarea.priority === 'alta') {
+                    prioridadIcono = '↑';
+                } else if (tarea.priority === 'baja') {
+                    prioridadIcono = '↓';
+                }
+                //Calculamos el progreso
                 fila.innerHTML = `
                     <td>${tarea.id}</td>
                     <td>${capitalizar(tarea.area)}</td>
@@ -1492,6 +1500,8 @@ async function mostrarTareas() {
                         </div>
                         ${tarea.progreso}%
                     </td>
+                    
+                    <td style="color: ${tarea.priority === 'alta' ? 'red' : 'green'}">${prioridadIcono}</td>
                     <td>${tarea.estimated_hours}h</td>
                     <td>${tarea.completed_hours}h</td>
                     <td>
